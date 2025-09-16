@@ -9,7 +9,7 @@ export default class SchoolDB_Client {
     const client = new Client({
       host : 'localhost',
       user: 'postgres',
-      password: 'aaren007',
+      password: process.env.DB_PW,
       database: 'School_Test',
       port: 5432,
     });
