@@ -45,34 +45,42 @@ async function loadCSVData(year = '111') {
 // 解析CSV數據
 function parseCSVData(csvText) {
     const lines = csvText.trim().split('\n');
-    const headers = lines[0].split(',');
+    // const headers = lines[0].split(',');
     
     const data = {};
     
     for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',');
-        const schoolCode = values[0];
-        const schoolName = values[1];
-        const deptCode = values[2];
-        const deptName = values[3];
-        const category = values[4];
-        
-        if (!data[schoolCode]) {
-            data[schoolCode] = {
-                name: schoolName,
-                departments: {}
-            };
-        }
-        
-        if (!data[schoolCode].departments[deptCode]) {
-            data[schoolCode].departments[deptCode] = {
-                name: deptName,
-                categories: []
-            };
-        }
-        
-        data[schoolCode].departments[deptCode].categories.push(category);
+      
+      const values = lines[i].split(',');
+      const schoolCode = values[0];
+      const schoolName = values[1];
+      const deptCode = values[2];
+      const deptName = values[3];
+      const category = values[4];
+
+      
+      let curData = data[schoolCode];
+      if (!curData) {
+        data[schoolCode] = {
+          name: schoolName,
+          departments: {}
+        };
+        curData = data[schoolCode];
+      }
+      
+      let curDepartment = curData.departments[deptCode];
+      if (!curDepartment) {
+        curData.departments[deptCode] = {
+          name: deptName,
+          categories: []
+        };
+        curDepartment = curData.departments[deptCode];
+      }
+      
+      curDepartment.categories.push(category);
     }
+
+    console.log(data);
     
     return data;
 }
