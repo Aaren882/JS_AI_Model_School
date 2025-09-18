@@ -29,10 +29,10 @@ async function loadCSVData(year = "111") {
     let response_Data = await response.json();
     return response_Data;
 	} catch (error) {
-		console.error(`無法讀取 ${year} 年CSV檔案:`, error);
+		console.error(`無法讀取 ${year} 年的資料`, error);
 
 		// 如果是預設年份載入失敗，嘗試載入其他年份
-		if (year === "111") {
+		/* if (year === "111") {
 			try {
 				const response = await fetch("/data/111_data.csv");
 				const csvContent = await response.text();
@@ -41,13 +41,13 @@ async function loadCSVData(year = "111") {
 				alert("無法讀取CSV檔案，請確認檔案已上傳");
 				return {};
 			}
-		}
+		} */
 		return {};
 	}
 }
 
 // 解析CSV數據
-function parseCSVData(csvText) {
+/* function parseCSVData(csvText) {
 	const lines = csvText.trim().split("\n");
 	// const headers = lines[0].split(',');
 
@@ -83,7 +83,7 @@ function parseCSVData(csvText) {
 	}
 
 	return data;
-}
+} */
 
 // 簡化群別名稱
 function simplifyCategory(category) {
@@ -132,9 +132,7 @@ function generateUniversityList(data, displayMode) {
 	} else if (displayMode === "department") {
 		// 系所模式：學校可展開，顯示去重複的系所
 		Object.keys(data).forEach((schoolCode) => {
-      console.log(schoolCode);
 			const school = data[schoolCode];
-
 
 			// 收集並去重複系所
 			const uniqueDepartments = {};
@@ -260,7 +258,6 @@ async function switchYear(year) {
 	try {
 		// 載入新年份的資料
 		const newData = await loadCSVData(year);
-    console.log(`newData = ${newData}`);
 		if (Object.keys(newData).length === 0) {
 			// 如果載入失敗，顯示錯誤訊息但不改變年份
 			universityList.innerHTML = `<li style="padding: 10px; color: #ff6b6b; text-align: center;">無法載入 ${year} 年資料</li>`;
