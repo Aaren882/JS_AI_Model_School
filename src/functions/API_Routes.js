@@ -69,6 +69,7 @@ API_router.get('/getAllSchool', (req, res) => {
 
 /*
   year = the target year
+  schoolID = `schoolID` that getting analyzed
 */
 API_router.get('/getSchoolAnalyze', async (req, res) => {
   let {
@@ -117,6 +118,7 @@ API_router.get('/getSchoolAnalyze', async (req, res) => {
 });
 
 /*
+  #TODO - Not working yet (maybe not needed)
   id = school id
 */
 API_router.get('/getSchoolDeparts', (req, res) => {
