@@ -68,6 +68,8 @@ API_router.get('/getAllSchool', (req, res) => {
 });
 
 /*
+  #TODO - More types of aspect analyze (School, department, group)
+
   year = the target year
   schoolID = `schoolID` that getting analyzed
 */
