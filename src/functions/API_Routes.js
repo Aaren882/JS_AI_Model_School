@@ -95,7 +95,8 @@ API_router.get('/getSchoolAnalyze', async (req, res) => {
   try {
     //- Asking AI
     let q = await dbClient.query(query);
-
+    
+    //- Construct data format
     const data = {};
     q.rows.forEach(elem =>{
       let { id, name, posvalid } = elem;
@@ -104,7 +105,6 @@ API_router.get('/getSchoolAnalyze', async (req, res) => {
         posvalid : posvalid
       };
     });
-    console.log(data);
     let chat_Res = await QueryChat(`${data}`, "這間學校很受歡迎嗎?");
 
     chat_Res = showdownCt.makeHtml(chat_Res.message.content);
