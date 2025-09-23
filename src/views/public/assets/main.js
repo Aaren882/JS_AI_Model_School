@@ -505,7 +505,7 @@ function updateSelectedDepartment(departmentElement) {
 		const code = deptCode;
 
 		// 檔名為 nodes_代碼.json 與 edges_代碼.json
-		/* const nodeFile = `/data/node_${code}_${currentYear}.json`;
+		const nodeFile = `/data/node_${code}_${currentYear}.json`;
 		const edgeFile = `/data/edge_${code}_${currentYear}.json`;
 		fetch(`/data/data_${code}_${currentYear}.json`)
 			.then((res) => res.json())
@@ -515,6 +515,7 @@ function updateSelectedDepartment(departmentElement) {
 				drawLineChart("chart-line-3", data, "正備取有效性", "正備取有效性");
 				drawLineChart("chart-line-4", data, "正取有效性", "正取有效性");
 			});
+    
 		// 載入並繪製 network
 		Promise.all([
 			fetch(nodeFile).then((res) => res.json()),
@@ -525,7 +526,7 @@ function updateSelectedDepartment(departmentElement) {
 			})
 			.catch((err) => {
 				console.error(`載入 ${nodeFile} 或 ${edgeFile} 失敗:`, err);
-			}); */
+			});
 
 		selectedTitle.textContent = `${school.name} - ${dept.name}`;
 		selectedInfo.innerHTML = `

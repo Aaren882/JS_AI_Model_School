@@ -1,11 +1,15 @@
 import 'dotenv/config'
 import Express from 'express'
-import showdown from 'showdown'
 import path from 'path'
 
 import API_router from './functions/API_Routes.js'
-import { QueryChat } from './functions/ollamaQuery.js'
-import { SchoolDB_Client } from './functions/dataBase_Client.js'
+import {validate} from './functions/ts_validation.js'
+// import { QueryChat } from './functions/ollamaQuery.js'
+// import { SchoolDB_Client } from './functions/dataBase_Client.js'
+
+//- TEST
+await validate();
+//- ------ -//
 
 const __dirname = process.cwd() + '/src/views';
 
