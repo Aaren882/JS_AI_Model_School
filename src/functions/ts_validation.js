@@ -40,33 +40,40 @@ export async function validate() {
     `);
     
     result.rows.forEach(match => {
-      let obj = match['competitives'];
-      let winner = obj[0];
+      const objs = match['competitives'];
 
-      for (let index = 1; index < obj.length; index++) {
-        const element = obj[index];
+      for (let i = 0; i < objs.length; i++) {
         
-        if (null === element)
-          continue;
-        
-        let edge = [winner.toString(), element.toString()];
-        let isDraw = (winner === element);
+        const isDraw = i > 0;
+        const last_elem = objs[i];
 
-        //- Update rating value
-        let [Source_rank, Target_rank] = edge.map(e => {
-          return nodes.get(e);
-        });
+        for (let j = i + 1; j < objs.length; j++) {
+          const element = objs[j];
+          
+          //- Skip if element is null
+          if (null === element)
+            continue;
+          
+          const cur_edge = [last_elem.toString(), element.toString()];
 
-        let [newP1, newP2] = rate_1vs1(
-          Source_rank,
-          Target_rank,
-          isDraw
-        );
-        
-        edges.push(edge);
-        nodes.set(edge[0], newP1);
-        nodes.set(edge[1], newP2);
+          //- Update rating value
+          const [Source_rank, Target_rank] = cur_edge.map(e => {
+            return nodes.get(e);
+          });
+          
+          //- Rating
+          const [newP1, newP2] = rate_1vs1(
+            Source_rank,
+            Target_rank,
+            isDraw
+          );
+          
+          edges.push(cur_edge);
+          nodes.set(cur_edge[0], newP1);
+          nodes.set(cur_edge[1], newP2);
+        }
       }
+      
     });
     console.log(`102029 : ${R_score(nodes.get('102029'))}`);
     console.log(`105068 : ${R_score(nodes.get('105068'))}`);
