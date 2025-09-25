@@ -17,7 +17,7 @@ const modeButtons = document.querySelectorAll(".mode-button");
 const AITextBox = document.getElementById("AI-input-area");
 
 // 從CSV文件讀取資料
-async function loadCSVData(year = "111") {
+async function loadSchoolData(year = "111") {
 	try {
     let response = await fetch(
       `/api/getAllSchool?year=${year}`
@@ -27,63 +27,57 @@ async function loadCSVData(year = "111") {
 		}
     
     let response_Data = await response.json();
-    return response_Data;
+    originalUniversityData = response_Data; //- Update school data
+
+    return parseSchoolData(response_Data);
 	} catch (error) {
 		console.error(`無法讀取 ${year} 年的資料`, error);
-
-		// 如果是預設年份載入失敗，嘗試載入其他年份
-		/* if (year === "111") {
-			try {
-				const response = await fetch("/data/111_data.csv");
-				const csvContent = await response.text();
-				return parseCSVData(csvContent);
-			} catch (fallbackError) {
-				alert("無法讀取CSV檔案，請確認檔案已上傳");
-				return {};
-			}
-		} */
 		return {};
 	}
 }
 
-// 解析CSV數據
-/* function parseCSVData(csvText) {
-	const lines = csvText.trim().split("\n");
-	// const headers = lines[0].split(',');
-
+// 解析學校數據
+function parseSchoolData(schoolData) {
 	const data = {};
+	for (let i = 0; i < schoolData.length; i++) {
+    const elem = schoolData[i];
+		const { //- #NOTE - all the query name will be lowercase
+      schoolcode,
+      schoolname,
+      deptcode,
+      deptname,
+      category
+    } = elem;
 
-	for (let i = 1; i < lines.length; i++) {
-		const values = lines[i].split(",");
-		const schoolCode = values[0];
-		const schoolName = values[1];
-		const deptCode = values[2];
-		const deptName = values[3];
-		const category = values[4];
+    let curData = data[schoolcode];
+    if (!curData) {
+      data[schoolcode] = {
+        name: schoolname,
+        departments: {},
+      };
+      curData = data[schoolcode];
+    }
 
-		let curData = data[schoolCode];
-		if (!curData) {
-			data[schoolCode] = {
-				name: schoolName,
-				departments: {},
-			};
-			curData = data[schoolCode];
-		}
+    let curDepartment = curData.departments[deptcode];
+    if (!curDepartment) {
+      curData.departments[deptcode] = {
+        name: deptname,
+        categories: [],
+      };
+      curDepartment = curData.departments[deptcode];
+    }
 
-		let curDepartment = curData.departments[deptCode];
-		if (!curDepartment) {
-			curData.departments[deptCode] = {
-				name: deptName,
-				categories: [],
-			};
-			curDepartment = curData.departments[deptCode];
-		}
-
-		curDepartment.categories.push(category);
+    curDepartment.categories.push(category);
 	}
 
 	return data;
-} */
+}
+
+function localizeDept(searchDept) {
+  let searched = originalUniversityData.find(x => x.deptcode === searchDept);
+  
+  return [searched.deptcode, searched.schoolname, searched.deptname].join('/');
+}
 
 // 簡化群別名稱
 function simplifyCategory(category) {
@@ -257,7 +251,7 @@ async function switchYear(year) {
 
 	try {
 		// 載入新年份的資料
-		const newData = await loadCSVData(year);
+		const newData = await loadSchoolData(year);
 		if (Object.keys(newData).length === 0) {
 			// 如果載入失敗，顯示錯誤訊息但不改變年份
 			universityList.innerHTML = `<li style="padding: 10px; color: #ff6b6b; text-align: center;">無法載入 ${year} 年資料</li>`;
@@ -267,7 +261,7 @@ async function switchYear(year) {
 		// 更新全局變量
 		currentYear = year;
 		universityData = newData;
-		originalUniversityData = JSON.parse(JSON.stringify(newData));
+		// originalUniversityData = JSON.parse(JSON.stringify(newData));
 
 		// 更新年份按鈕狀態
 		yearButtons.forEach((btn) => {
@@ -333,8 +327,8 @@ function initializeModeButtons() {
 // 初始化數據和UI
 async function initializeData() {
 	try {
-		universityData = await loadCSVData(currentYear);
-		originalUniversityData = JSON.parse(JSON.stringify(universityData)); // 深拷貝
+		universityData = await loadSchoolData(currentYear);
+		// originalUniversityData = JSON.parse(JSON.stringify(universityData)); // 深拷貝
 
 		if (Object.keys(universityData).length === 0) {
 			universityList.innerHTML =
@@ -505,7 +499,16 @@ function updateSelectedDepartment(departmentElement) {
 		const code = deptCode;
 
 		// 檔名為 nodes_代碼.json 與 edges_代碼.json
-		const nodeFile = `/data/node_${code}_${currentYear}.json`;
+    fetch(`api/getRelationData?year=${currentYear}&id=${deptCode}`)
+      .then(res => res.json())
+      .then(relations => {
+        console.log(relations);
+				renderNetwork(relations);
+      })
+      .catch((err) => {
+				console.error(`載入關係圖失敗:`, err);
+			});
+		/* const nodeFile = `/data/node_${code}_${currentYear}.json`;
 		const edgeFile = `/data/edge_${code}_${currentYear}.json`;
 		fetch(`/data/data_${code}_${currentYear}.json`)
 			.then((res) => res.json())
@@ -514,19 +517,21 @@ function updateSelectedDepartment(departmentElement) {
 				drawDualAxisLineChart("chart-line-2", data, "R值", "登分平均分數");
 				drawLineChart("chart-line-3", data, "正備取有效性", "正備取有效性");
 				drawLineChart("chart-line-4", data, "正取有效性", "正取有效性");
-			});
+			}); */
     
 		// 載入並繪製 network
-		Promise.all([
+		/* Promise.all([
 			fetch(nodeFile).then((res) => res.json()),
 			fetch(edgeFile).then((res) => res.json()),
 		])
 			.then(([nodes, edges]) => {
+        console.log(nodes);
+        console.log(edges);
 				renderNetwork(nodes, edges);
 			})
 			.catch((err) => {
 				console.error(`載入 ${nodeFile} 或 ${edgeFile} 失敗:`, err);
-			});
+			}); */
 
 		selectedTitle.textContent = `${school.name} - ${dept.name}`;
 		selectedInfo.innerHTML = `
@@ -687,9 +692,9 @@ window.getCurrentDisplayMode = function () {
 };
 
 // 新增：取得原始CSV資料的函數
-window.getOriginalCSVData = function () {
+/* window.getOriginalCSVData = function () {
 	return originalUniversityData;
-};
+}; */
 
 // 新增：重新載入CSV資料的函數
 window.reloadCSVData = async function () {
@@ -705,37 +710,33 @@ window.switchToYear = function (year) {
 window.switchToDisplayMode = function (mode) {
 	return switchDisplayMode(mode);
 };
-async function loadNetworkFromFiles() {
-	try {
-		const [nodesRes, edgesRes] = await Promise.all([
-			fetch(`/data/node_${deptCode}_${year}.json`),
-			fetch(`/data/edge_${deptCode}_${year}.json`),
-		]);
 
-		const nodesData = await nodesRes.json();
-		const edgesData = await edgesRes.json();
-
-		renderNetwork(nodesData, edgesData);
-	} catch (error) {
-		console.error("載入網路圖失敗", error);
-	}
-}
-function renderNetwork(nodes, edges) {
+function renderNetwork(relations) {
 	const placeholder = document.querySelector(".placeholder-text");
 	if (placeholder) placeholder.style.display = "block";
+
+  const edges = relations;
+  const nodes = [];
+  relations.flat().forEach(n => {
+    if (!nodes.includes(n)) {
+      nodes.push(n);
+    }
+  });
+  console.log(nodes.map((n) => ({ data: { id: n, label: localizeDept(n) } })));
+  console.log(edges.map((e) => ({ data: { source: e[0], target: e[1] } })));
 
 	cytoscape({
 		container: document.getElementById("network-container"),
 		elements: [
-			...nodes.map((n) => ({ data: { id: n.id, label: n.label } })),
-			...edges.map((e) => ({ data: { source: e.source, target: e.target } })),
+			...nodes.map((n) => ({ data: { id: n, label: localizeDept(n) } })),
+			...edges.map((e) => ({ data: { source: e[0], target: e[1] } })),
 		],
 
 		layout: {
 			name: "cose",
 			idealEdgeLength: 160, // 適中邊長，避免節點擠在一起
-			nodeRepulsion: 800000, // 高排斥力，節點會分得開
-			gravity: 50, // 減低重力，避免向中心集中
+			nodeRepulsion: 8000000, // 高排斥力，節點會分得開
+			gravity: 2, // 減低重力，避免向中心集中
 			numIter: 1500, // 多跑一些迭代讓圖更穩定
 			initialTemp: 200, // 初始運動能量
 			coolingFactor: 0.95, // 冷卻速度

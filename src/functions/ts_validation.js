@@ -1,32 +1,51 @@
 import dbClient from './dataBase_Client.js'
 import { rate_1vs1, Rating } from 'ts-trueskill';
 
-const query = `
-  SELECT 
-    校系代碼 AS id
-  FROM public."Data_111"
-`;
+class Ts_Rating {
 
-function R_score(input) {
-  let mu = input.mu;
-  let sigma = input.sigma;
-  return mu-2*sigma;
+  constructor(nodes, edges) {
+    this.nodes = nodes;
+    this.edges = edges;
+  }
+
+  R_score(id) {
+    let rating = this.nodes.get(id);
+    let mu = rating.mu;
+    let sigma = rating.sigma;
+    return mu-2*sigma;
+  }
+
+  //- Get one level nodes around
+  getLevelNodes(query_target = '107024') {
+    let query_nodes = [];
+
+    const cur_nodes = this.edges.filter(x => x.includes(query_target));
+    
+    /* const query_level = 1;
+    for (let index = 0; index < query_level; index++) {
+    } */
+    return query_nodes.concat(cur_nodes);
+  }
 }
 
-export async function validate() {
+export async function Ts_data(year = 111) {
   try {
-    let result = await dbClient.query(query);
+    let query = `
+      SELECT 
+        校系代碼 AS id
+      FROM public."Data_${year}"
+    `;
+    let _query = await dbClient.query(query);
 
     //- NODES
     const nodes = new Map();
-    result.rows.forEach(team => { //- split schools into teams
+    _query.rows.forEach(team => { //- split schools into teams
       if (team['id'] !== null)
         nodes.set(team['id'].toString(), new Rating());
     });
     
-    //- Rate all the matches
-    const edges = [];
-    result = await dbClient.query(`
+    //- Rate all the matches (EDGES)
+    query = `
       SELECT 
         ARRAY[
           一,
@@ -36,10 +55,12 @@ export async function validate() {
           五,
           六
         ] AS competitives
-      FROM public.admission_111
-    `);
+      FROM public.admission_${year}
+    `;
+    const edges = [];
+    _query = await dbClient.query(query);
     
-    result.rows.forEach(match => {
+    _query.rows.forEach(match => {
       const objs = match['competitives'];
 
       for (let i = 0; i < objs.length; i++) {
@@ -73,10 +94,9 @@ export async function validate() {
           nodes.set(cur_edge[1], newP2);
         }
       }
-      
     });
-    console.log(`102029 : ${R_score(nodes.get('102029'))}`);
-    console.log(`105068 : ${R_score(nodes.get('105068'))}`);
+
+    return new Ts_Rating(nodes, edges);
   } catch (error) {
     console.error(error.message);
   }

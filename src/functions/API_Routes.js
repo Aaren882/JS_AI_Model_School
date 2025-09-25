@@ -2,6 +2,7 @@ import Express from 'express'
 import showdown from 'showdown'
 import { QueryChat } from './ollamaQuery.js';
 import dbClient from './dataBase_Client.js'
+import { Ts_data } from './ts_validation.js'
 
 const showdownCt = new showdown.Converter(); //- MD convertor
 const API_router = Express.Router();
@@ -9,7 +10,7 @@ const API_router = Express.Router();
 /*
   year = the target year
 */
-API_router.get('/getAllSchool', (req, res) => {
+API_router.get('/getAllSchool', async (req, res) => {
   let { year = "0" } = req.query;
   let year_Int = parseInt(year);
 
@@ -22,49 +23,15 @@ API_router.get('/getAllSchool', (req, res) => {
     SELECT *
     FROM public."${year_Int}_QUERY"
   `;
-
-  dbClient.query(query)
-    .then(_res => {
-
-      const data = {};
-      
-      _res.rows.forEach(elem => {
-        const { //- #NOTE - all the query name will be lowercase
-          schoolcode,
-          schoolname,
-          deptcode,
-          deptname,
-          category
-        } = elem;
-
-        let curData = data[schoolcode];
-        if (!curData) {
-          data[schoolcode] = {
-            name: schoolname,
-            departments: {},
-          };
-          curData = data[schoolcode];
-        }
-
-        let curDepartment = curData.departments[deptcode];
-        if (!curDepartment) {
-          curData.departments[deptcode] = {
-            name: deptname,
-            categories: [],
-          };
-          curDepartment = curData.departments[deptcode];
-        }
-
-        curDepartment.categories.push(category);
-      });
-
-      //- Responses
-      res.status(200).json(data);
-    })
-    .catch(err => {
-      res.status(404).send("404 Error no data.");
-      console.error(err.message);
-    });
+  try {
+    //- Responses
+    let _res = await dbClient.query(query)
+    res.status(200).json(_res.rows);
+  } catch (err) {
+    res.status(404).send("404 Error no data.");
+    console.error(err.message);
+  }
+  
 });
 
 /*
@@ -118,6 +85,27 @@ API_router.get('/getSchoolAnalyze', async (req, res) => {
     console.error(err.message);
   }
 });
+
+/*
+  year = the target year
+  id = school ID
+*/
+API_router.get('/getRelationData', async (req, res) => {
+  try {
+    let { year, id } = req.query;
+    let year_Int = parseInt(year);
+
+    const ts_data = await Ts_data(year_Int);
+    const relations = ts_data.getLevelNodes(id);
+    console.log(relations);
+    
+    res.status(200).json(relations);
+  } catch (err) {
+    res.status(404).send("404 Error no data.");
+    console.error(err.message);
+  }
+});
+
 
 /*
   #TODO - Not working yet (maybe not needed)
