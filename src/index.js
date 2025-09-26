@@ -3,11 +3,10 @@ import Express from 'express'
 import path from 'path'
 
 import API_router from './functions/API_Routes.js'
-import dbClient from './functions/dataBase_Client.js'
-// import { QueryChat } from './functions/ollamaQuery.js'
-// import { SchoolDB_Client } from './functions/dataBase_Client.js'
+import { dataBase_methods } from './functions/dataBase_Client.js'
 
 //- TEST
+await dataBase_methods.initDatabase();
 //- ------ -//
 
 const __dirname = process.cwd() + '/src/views';

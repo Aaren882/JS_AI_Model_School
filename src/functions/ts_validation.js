@@ -16,9 +16,8 @@ class Ts_Rating {
   }
 
   //- Get one level nodes around
-  getLevelNodes(query_target = '107024') {
+  getLevelNodes(query_target = '') {
     let query_nodes = [];
-
     const cur_nodes = this.edges.filter(x => x.includes(query_target));
     
     /* const query_level = 1;

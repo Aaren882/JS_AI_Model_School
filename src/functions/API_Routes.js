@@ -2,6 +2,7 @@ import Express from 'express'
 import showdown from 'showdown'
 import { QueryChat } from './ollamaQuery.js';
 import dbClient from './dataBase_Client.js'
+import { dataBase_methods } from './dataBase_Client.js'
 import { Ts_data } from './ts_validation.js'
 
 const showdownCt = new showdown.Converter(); //- MD convertor
@@ -19,14 +20,11 @@ API_router.get('/getAllSchool', async (req, res) => {
     return;
   }
 
-  const query = `
-    SELECT *
-    FROM public."${year_Int}_QUERY"
-  `;
   try {
     //- Responses
-    let _res = await dbClient.query(query)
-    res.status(200).json(_res.rows);
+    // let _res = await dbClient.query(query);
+    let _res = await dataBase_methods.getAllSchool(year_Int);
+    res.status(200).json(_res);
   } catch (err) {
     res.status(404).send("404 Error no data.");
     console.error(err.message);
@@ -97,7 +95,6 @@ API_router.get('/getRelationData', async (req, res) => {
 
     const ts_data = await Ts_data(year_Int);
     const relations = ts_data.getLevelNodes(id);
-    console.log(relations);
     
     res.status(200).json(relations);
   } catch (err) {
