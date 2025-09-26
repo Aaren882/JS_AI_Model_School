@@ -73,10 +73,14 @@ function parseSchoolData(schoolData) {
 	return data;
 }
 
-function localizeDept(searchDept) {
+function dataParser(searchDept, joinElements = ['schoolname']) {
   let searched = originalUniversityData.find(x => x.deptcode === searchDept);
   
-  return [searched.deptcode, searched.schoolname, searched.deptname].join('/');
+  return joinElements.map(x => searched[x]);
+}
+
+function localizeDept(searchDept, joinElements = ['schoolname'], split = '/') {
+  return dataParser(searchDept, joinElements).join(split);
 }
 
 // 簡化群別名稱
@@ -498,40 +502,37 @@ function updateSelectedDepartment(departmentElement) {
 		};
 		const code = deptCode;
 
-		// 檔名為 nodes_代碼.json 與 edges_代碼.json
+    
+
+		// 載入並繪製 network
     fetch(`api/getRelationData?year=${currentYear}&id=${deptCode}`)
       .then(res => res.json())
       .then(relations => {
-        console.log(relations);
-				renderNetwork(relations);
+
+        const edges = relations;
+        const nodes = [];
+        relations.flat().forEach(n => {
+          if (!nodes.includes(n)) {
+            nodes.push(n);
+          }
+        });
+        
+				drawLineChart("chart-line-1", nodes, "一階通過率", "firststagepassrate");
+				drawLineChart("chart-line-3", nodes, "正備取有效性", "admissionvalidity");
+				drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
+				renderNetwork(nodes,edges);
       })
       .catch((err) => {
 				console.error(`載入關係圖失敗:`, err);
 			});
-		/* const nodeFile = `/data/node_${code}_${currentYear}.json`;
-		const edgeFile = `/data/edge_${code}_${currentYear}.json`;
-		fetch(`/data/data_${code}_${currentYear}.json`)
+		
+		/* fetch(`/data/data_${code}_${currentYear}.json`)
 			.then((res) => res.json())
 			.then((data) => {
-				drawLineChart("chart-line-1", data, "一階通過率", "一階通過率");
-				drawDualAxisLineChart("chart-line-2", data, "R值", "登分平均分數");
-				drawLineChart("chart-line-3", data, "正備取有效性", "正備取有效性");
-				drawLineChart("chart-line-4", data, "正取有效性", "正取有效性");
+        console.log(data);
+				// drawDualAxisLineChart("chart-line-2", data, "R值", "登分平均分數");
 			}); */
-    
-		// 載入並繪製 network
-		/* Promise.all([
-			fetch(nodeFile).then((res) => res.json()),
-			fetch(edgeFile).then((res) => res.json()),
-		])
-			.then(([nodes, edges]) => {
-        console.log(nodes);
-        console.log(edges);
-				renderNetwork(nodes, edges);
-			})
-			.catch((err) => {
-				console.error(`載入 ${nodeFile} 或 ${edgeFile} 失敗:`, err);
-			}); */
+
 
 		selectedTitle.textContent = `${school.name} - ${dept.name}`;
 		selectedInfo.innerHTML = `
@@ -711,24 +712,14 @@ window.switchToDisplayMode = function (mode) {
 	return switchDisplayMode(mode);
 };
 
-function renderNetwork(relations) {
+function renderNetwork(nodes, edges) {
 	const placeholder = document.querySelector(".placeholder-text");
 	if (placeholder) placeholder.style.display = "block";
-
-  const edges = relations;
-  const nodes = [];
-  relations.flat().forEach(n => {
-    if (!nodes.includes(n)) {
-      nodes.push(n);
-    }
-  });
-  console.log(nodes.map((n) => ({ data: { id: n, label: localizeDept(n) } })));
-  console.log(edges.map((e) => ({ data: { source: e[0], target: e[1] } })));
 
 	cytoscape({
 		container: document.getElementById("network-container"),
 		elements: [
-			...nodes.map((n) => ({ data: { id: n, label: localizeDept(n) } })),
+			...nodes.map((n) => ({ data: { id: n, label: localizeDept(n, ['deptcode', 'schoolname', 'deptname', 'r_score']) } })),
 			...edges.map((e) => ({ data: { source: e[0], target: e[1] } })),
 		],
 
@@ -743,6 +734,7 @@ function renderNetwork(relations) {
 			animate: true,
 			fit: true, // 自動縮放適應畫布
 			padding: 30,
+      headless: false,
 		},
 		style: [
 			{
@@ -764,7 +756,9 @@ function renderNetwork(relations) {
 				selector: "edge",
 				style: {
 					width: 2,
-					"line-color": "#ccc",
+					"line-color": "#ba2929",
+          'source-arrow-color': '#ba2929', //- #NOTE : they're pointing to the winner
+          'source-arrow-shape': 'triangle',
 					"curve-style": "bezier",
 				},
 			},
@@ -782,17 +776,17 @@ function safeDraw(containerId, chartConfig) {
 	const ctx = document.getElementById(containerId);
 	chartInstances[containerId] = new Chart(ctx, chartConfig);
 }
-function drawLineChart(containerId, data, labelName = "", dataKey = "") {
-	const labels = data.map((d) => d["111年虎科資管(資電類)"].split("/")[1]);
-	const values = data.map((d) => d[dataKey]);
+function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
+  const values = nodes.map(d => parseFloat(localizeDept(d, [dataKey])));
+  const labels = nodes.map(d => dataParser(d,['schoolname', 'deptname']));
 
-	safeDraw(containerId, {
+  safeDraw(containerId, {
 		type: "line",
 		data: {
 			labels: labels,
 			datasets: [
 				{
-					label: labelName,
+					label: chartName,
 					data: values,
 					borderColor: "#3e95cd",
 					fill: false,
@@ -811,7 +805,7 @@ function drawLineChart(containerId, data, labelName = "", dataKey = "") {
 					},
 					font: { size: 10 },
 				},
-				title: { display: true, text: labelName },
+				title: { display: true, text: chartName },
 			},
 		},
 	});
