@@ -1,10 +1,10 @@
-import dbClient from '../dataBase_Client.js'
-import { Ts_data } from '../ts_validation.js'
+import dbClient from "../dataBase_Client.js";
+import { Ts_data } from "../ts_validation.js";
 
 //- Prefix "Data_" => 甄選
 async function createDataView(year) {
-  const query = {
-    text: `
+	const query = {
+		text: `
       SELECT 
       (
         SUBSTRING(
@@ -72,31 +72,33 @@ async function createDataView(year) {
         "Distr_${year}".招生群別
       )
     WHERE "Data_${year}".學校 IS NOT NULL
-    `
-  };
-  const create = {
-    name : `create-QUERY_${year}_VIEW_Table`,
-    text : `
+    `,
+	};
+	const create = {
+		name: `create-QUERY_${year}_VIEW_Table`,
+		text: `
       CREATE OR REPLACE View "QUERY_${year}" AS
         ${query.text}
     `,
-  };
+	};
 
+	const [query_data, ts_data] = await Promise.all([
+		dbClient.query(query),
+		Ts_data(year),
+	]);
 
-  const [query_data, ts_data] = await Promise.all([
-    dbClient.query(query),
-    Ts_data(year)
-  ]);
+	//- #NOTE : Update R-score to DB
+	let result = query_data.rows
+		.map((x) => {
+			const { deptcode } = x;
+			return `(${deptcode}, ${ts_data.R_score(deptcode)})`;
+		})
+		.flat()
+		.join(",");
 
-  //- #NOTE : Update R-score to DB
-  let result = query_data.rows.map(x => {
-    const { deptcode } = x;
-    return `(${deptcode}, ${ts_data.R_score(deptcode)})`;
-  }).flat().join(',');
-
-  const insert = {
-    name : `insert-${year}_VIEW_Table`,
-    text : `
+	const insert = {
+		name: `insert-${year}_VIEW_Table`,
+		text: `
       UPDATE public."Data_${year}"
         SET 
           r_score = new_data.score
@@ -105,20 +107,22 @@ async function createDataView(year) {
         )
         AS new_data(school_id, score)
         WHERE "校系代碼" = new_data.school_id;
-    `
-  };
-  await dbClient.query(insert);
-  
-  //- create view table
-  await dbClient.query(create);
-  
-  console.log(`  ✅\x1b[32m-- Successfully create \"Query_${year}\" view.👁️\x1b[0m`);
+    `,
+	};
+	await dbClient.query(insert);
+
+	//- create view table
+	await dbClient.query(create);
+
+	console.log(
+		`  ✅\x1b[32m-- Successfully create \"Query_${year}\" view.👁️\x1b[0m`
+	);
 }
 
 //- Prefix "Data_Distr_" => 登記分發 #NOTE : Pending
 async function createDistrView(year) {
-  const query = {
-    text: `
+	const query = {
+		text: `
       SELECT
         FORMAT(
           '%s%s(%s)',
@@ -144,21 +148,23 @@ async function createDistrView(year) {
           )
         ) AS "avg"
       FROM public."Distr_${year}"
-    `
-  };
-  const create = {
-    name : `create-Distr_${year}_VIEW_Table`,
-    text : `
+    `,
+	};
+	const create = {
+		name: `create-Distr_${year}_VIEW_Table`,
+		text: `
       CREATE OR REPLACE View "QUERY_Distr_${year}" AS
         ${query.text}
     `,
-  };
+	};
 
-  //- create view table
-  await dbClient.query(create);
-  console.log(`  ✅\x1b[32m-- Successfully create \"QUERY_Distr_${year}\" view.👁️\x1b[0m`);
+	//- create view table
+	await dbClient.query(create);
+	console.log(
+		`  ✅\x1b[32m-- Successfully create \"QUERY_Distr_${year}\" view.👁️\x1b[0m`
+	);
 }
 
 export function QueryViews(year) {
-  return createDataView(year);
+	return createDataView(year);
 }

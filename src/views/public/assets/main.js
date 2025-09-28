@@ -19,17 +19,15 @@ const AITextBox = document.getElementById("AI-input-area");
 // 從CSV文件讀取資料
 async function loadSchoolData(year = "111") {
 	try {
-    let response = await fetch(
-      `/api/getAllSchool?year=${year}`
-    );
+		let response = await fetch(`/api/getAllSchool?year=${year}`);
 		if (!response.ok) {
 			throw new Error(`無法載入 ${year} 年資料`);
 		}
-    
-    let response_Data = await response.json();
-    originalUniversityData = response_Data; //- Update school data
 
-    return parseSchoolData(response_Data);
+		let response_Data = await response.json();
+		originalUniversityData = response_Data; //- Update school data
+
+		return parseSchoolData(response_Data);
 	} catch (error) {
 		console.error(`無法讀取 ${year} 年的資料`, error);
 		return {};
@@ -40,47 +38,47 @@ async function loadSchoolData(year = "111") {
 function parseSchoolData(schoolData) {
 	const data = {};
 	for (let i = 0; i < schoolData.length; i++) {
-    const elem = schoolData[i];
-		const { //- #NOTE - all the query name will be lowercase
-      schoolcode,
-      schoolname,
-      deptcode,
-      deptname,
-      category
-    } = elem;
+		const elem = schoolData[i];
+		const {
+			//- #NOTE - all the query name will be lowercase
+			schoolcode,
+			schoolname,
+			deptcode,
+			deptname,
+			category,
+		} = elem;
 
-    let curData = data[schoolcode];
-    if (!curData) {
-      data[schoolcode] = {
-        name: schoolname,
-        departments: {},
-      };
-      curData = data[schoolcode];
-    }
+		let curData = data[schoolcode];
+		if (!curData) {
+			data[schoolcode] = {
+				name: schoolname,
+				departments: {},
+			};
+			curData = data[schoolcode];
+		}
 
-    let curDepartment = curData.departments[deptcode];
-    if (!curDepartment) {
-      curData.departments[deptcode] = {
-        name: deptname,
-        categories: [],
-      };
-      curDepartment = curData.departments[deptcode];
-      curDepartment.categories.push(category);
-    }
-
+		let curDepartment = curData.departments[deptcode];
+		if (!curDepartment) {
+			curData.departments[deptcode] = {
+				name: deptname,
+				categories: [],
+			};
+			curDepartment = curData.departments[deptcode];
+			curDepartment.categories.push(category);
+		}
 	}
 
 	return data;
 }
 
-function dataParser(searchDept, joinElements = ['schoolname']) {
-  let searched = originalUniversityData.find(x => x.deptcode === searchDept);
-  
-  return joinElements.map(x => searched[x]);
+function dataParser(searchDept, joinElements = ["schoolname"]) {
+	let searched = originalUniversityData.find((x) => x.deptcode === searchDept);
+
+	return joinElements.map((x) => searched[x]);
 }
 
-function localizeDept(searchDept, joinElements = ['schoolname'], split = '/') {
-  return dataParser(searchDept, joinElements).join(split);
+function localizeDept(searchDept, joinElements = ["schoolname"], split = "/") {
+	return dataParser(searchDept, joinElements).join(split);
 }
 
 // 簡化群別名稱
@@ -481,7 +479,6 @@ function updateSelectedDepartment(departmentElement) {
 		)} | 年份: ${currentYear}<br>
             模式: 系所模式 | 招生群別: ${categories.join(", ")}
         `;
-    
 	} else {
 		// 系組模式
 		const deptCode = departmentElement.getAttribute("data-code");
@@ -502,31 +499,37 @@ function updateSelectedDepartment(departmentElement) {
 		};
 		const code = deptCode;
 
-    
-
 		// 載入並繪製 network
-    fetch(`api/getRelationData?year=${currentYear}&id=${deptCode}`)
-      .then(res => res.json())
-      .then(relations => {
+		fetch(`api/getRelationData?year=${currentYear}&id=${deptCode}`)
+			.then((res) => res.json())
+			.then((relations) => {
+				const edges = relations;
+				const nodes = [];
+				relations.flat().forEach((n) => {
+					if (!nodes.includes(n)) {
+						nodes.push(n);
+					}
+				});
 
-        const edges = relations;
-        const nodes = [];
-        relations.flat().forEach(n => {
-          if (!nodes.includes(n)) {
-            nodes.push(n);
-          }
-        });
-        
-				drawLineChart("chart-line-1", nodes, "一階通過率", "firststagepassrate");
+				drawLineChart(
+					"chart-line-1",
+					nodes,
+					"一階通過率",
+					"firststagepassrate"
+				);
 				drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
-				drawLineChart("chart-line-3", nodes, "正備取有效性", "admissionvalidity");
+				drawLineChart(
+					"chart-line-3",
+					nodes,
+					"正備取有效性",
+					"admissionvalidity"
+				);
 				drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
-				renderNetwork(nodes,edges);
-      })
-      .catch((err) => {
+				renderNetwork(nodes, edges);
+			})
+			.catch((err) => {
 				console.error(`載入關係圖失敗:`, err);
 			});
-
 
 		selectedTitle.textContent = `${school.name} - ${dept.name}`;
 		selectedInfo.innerHTML = `
@@ -534,21 +537,19 @@ function updateSelectedDepartment(departmentElement) {
             模式: 系組模式 | 招生群別: ${categories.join(", ")}
         `;
 
-    //- Get AI analyze
-    fetch(`/api/getSchoolAnalyze?year=${currentYear}&schoolID=${deptCode}`)
-      .then(async res => {
-        let { chat } = await res.json();
-        AITextBox.innerHTML = chat;
-      })
-      .catch(e => {
-        AITextBox.textContent = `${e.message}`;
-      });
+		//- Get AI analyze
+		fetch(`/api/getSchoolAnalyze?year=${currentYear}&schoolID=${deptCode}`)
+			.then(async (res) => {
+				let { chat } = await res.json();
+				AITextBox.innerHTML = chat;
+			})
+			.catch((e) => {
+				AITextBox.textContent = `${e.message}`;
+			});
 	}
 
 	selectedInfo.classList.remove("no-selection");
 	selectedDepartment = departmentInfo;
-
-  
 
 	console.log("選中科系:", selectedDepartment);
 }
@@ -713,7 +714,17 @@ function renderNetwork(nodes, edges) {
 	cytoscape({
 		container: document.getElementById("network-container"),
 		elements: [
-			...nodes.map((n) => ({ data: { id: n, label: localizeDept(n, ['deptcode', 'schoolname', 'deptname', 'r_score']) } })),
+			...nodes.map((n) => ({
+				data: {
+					id: n,
+					label: localizeDept(n, [
+						"deptcode",
+						"schoolname",
+						"deptname",
+						"r_score",
+					]),
+				},
+			})),
 			...edges.map((e) => ({ data: { source: e[0], target: e[1] } })),
 		],
 
@@ -728,7 +739,7 @@ function renderNetwork(nodes, edges) {
 			animate: true,
 			fit: true, // 自動縮放適應畫布
 			padding: 30,
-      headless: false,
+			headless: false,
 		},
 		style: [
 			{
@@ -751,8 +762,8 @@ function renderNetwork(nodes, edges) {
 				style: {
 					width: 2,
 					"line-color": "#ba2929",
-          'source-arrow-color': '#ba2929', //- #NOTE : they're pointing to the winner
-          'source-arrow-shape': 'triangle',
+					"source-arrow-color": "#ba2929", //- #NOTE : they're pointing to the winner
+					"source-arrow-shape": "triangle",
 					"curve-style": "bezier",
 				},
 			},
@@ -771,10 +782,10 @@ function safeDraw(containerId, chartConfig) {
 	chartInstances[containerId] = new Chart(ctx, chartConfig);
 }
 function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
-  const values = nodes.map(d => parseFloat(localizeDept(d, [dataKey])));
-  const labels = nodes.map(d => dataParser(d,['schoolname', 'deptname']));
+	const values = nodes.map((d) => parseFloat(localizeDept(d, [dataKey])));
+	const labels = nodes.map((d) => dataParser(d, ["schoolname", "deptname"]));
 
-  safeDraw(containerId, {
+	safeDraw(containerId, {
 		type: "line",
 		data: {
 			labels: labels,
@@ -805,7 +816,7 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 	});
 }
 function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
-  const labels = nodes.map(d => dataParser(d,['schoolname', 'deptname']));
+	const labels = nodes.map((d) => dataParser(d, ["schoolname", "deptname"]));
 	const rValues = nodes.map((d) => parseFloat(localizeDept(d, [rKey])));
 	const avgValues = nodes.map((d) => parseFloat(localizeDept(d, [avgKey])));
 
