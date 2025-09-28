@@ -1,5 +1,4 @@
-import ollama from 'ollama'
-
+import ollama from "ollama";
 
 /* 
   params : stringData<STRING> json like string data
@@ -11,12 +10,17 @@ import ollama from 'ollama'
     }
 */
 export async function QueryChat(stringData, userPrmpt = ``) {
-  // - AI stuffs
-    const SYSpmpt = { role: 'system', content: '你是只能用\"台灣繁體中文zh-TW\"，且統計分析的專家' };
-    // const SYSpmpt = { role: 'system', content: '你是只能用台灣繁體中文zh-TW，且腦殘的助手:' };
-    // const SYSpmpt = { role: 'system', content: '你是只能用台灣繁體中文zh-TW，且專為腦殘解釋的助手:' };
-    // const SYSpmpt = { role: 'system', content: '你是只能用台灣繁體中文zh-TW，且是腦袋簡單的派大星:' };
-    const Assistpmpt = { role: 'assistant', content: `
+	// - AI stuffs
+	const SYSpmpt = {
+		role: "system",
+		content: '你是只能用"台灣繁體中文zh-TW"，且統計分析的專家',
+	};
+	// const SYSpmpt = { role: 'system', content: '你是只能用台灣繁體中文zh-TW，且腦殘的助手:' };
+	// const SYSpmpt = { role: 'system', content: '你是只能用台灣繁體中文zh-TW，且專為腦殘解釋的助手:' };
+	// const SYSpmpt = { role: 'system', content: '你是只能用台灣繁體中文zh-TW，且是腦袋簡單的派大星:' };
+	const Assistpmpt = {
+		role: "assistant",
+		content: `
       參數:
         校系代碼 = \"id\"
         學校 = \"name\"
@@ -27,15 +31,16 @@ export async function QueryChat(stringData, userPrmpt = ``) {
         高代表你的正取生很樂意去這間學校，代表招生策略有效。
       分析資料:
         \"${stringData}\"
-    ` };
-    const message = { role: 'user', content: userPrmpt };
-    
-  const response = await ollama.chat({
-    model: 'gemma2',
-    messages: [SYSpmpt,Assistpmpt,message],
-    // stream: true,
-    // keep_alive: "1.5h",
-  });
+    `,
+	};
+	const message = { role: "user", content: userPrmpt };
 
-  return response;
-};
+	const response = await ollama.chat({
+		model: "gemma2",
+		messages: [SYSpmpt, Assistpmpt, message],
+		// stream: true,
+		// keep_alive: "1.5h",
+	});
+
+	return response;
+}
