@@ -16,13 +16,13 @@ services:
       DB_IP: db-connect
       DB_PW: pw
       DB_PORT: 5432
-      PORT: 3000
+      PORT: 9000
     volumes:
       - analyze-data:/var/lib/university_analyze
     ports:
-      - 3000:3000 # To <- FROM
+      - 3000:9000 # To <- FROM
     expose:
-      - 3000
+      - 9000
   db-connect:
     image: postgres:latest
     restart: always
