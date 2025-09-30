@@ -68,13 +68,13 @@ API_router.get("/getSchoolAnalyze", async (req, res) => {
 				posvalid: posvalid,
 			};
 		});
-		let chat_Res = await QueryChat(`${data}`, "這間學校很受歡迎嗎?");
 
+		let chat_Res = await QueryChat(`${data}`, "這間學校很受歡迎嗎?");
 		chat_Res = showdownCt.makeHtml(chat_Res.message.content);
 		res.status(200).json({ chat: chat_Res });
 	} catch (err) {
 		res.status(404).send("404 Error no data.");
-		console.error(err.message);
+		console.error(err);
 	}
 });
 

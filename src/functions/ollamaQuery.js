@@ -1,4 +1,11 @@
-import ollama from "ollama";
+import { Ollama } from "ollama";
+
+let ollama = null;
+if (!ollama) {
+	ollama = new Ollama({
+		host: process.env.OLLAMA_HOST_URL,
+	});
+}
 
 /* 
   params : stringData<STRING> json like string data
@@ -36,7 +43,7 @@ export async function QueryChat(stringData, userPrmpt = ``) {
 	const message = { role: "user", content: userPrmpt };
 
 	const response = await ollama.chat({
-		model: "gemma2",
+		model: process.env.OLLAMA_MODEL,
 		messages: [SYSpmpt, Assistpmpt, message],
 		// stream: true,
 		// keep_alive: "1.5h",
