@@ -16,20 +16,20 @@ if (!dbClient) {
   }); */
 
 	const pool = new Pool({
-		host: "localhost",
+		host: process.env.DB_IP,
 		user: "postgres",
 		password: process.env.DB_PW,
 		database: "School_Test",
-		port: 5432,
+		port: process.env.DB_PORT,
 	});
 
 	try {
 		dbClient = await pool.connect();
 		console.log("\x1b[42mDatabase Connected.\x1b[0m \n");
-	} catch (errors) {
+	} catch (error) {
 		//- The error is "AggregateError"
 		console.log(`\x1b[41mCannot connect to Database !!\x1b[0m \n`);
-		e.errors.forEach((x) => {
+		error.errors.forEach((x) => {
 			console.error(`Database Error - \"\x1b[31m${x.message}\x1b[0m\"`);
 		});
 	}

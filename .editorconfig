@@ -3,10 +3,13 @@
 # top-most EditorConfig file
 root = true
 
-[*]
+[!**.yaml]
 indent_style = tab
 indent_size = 2
 end_of_line = crlf
 charset = utf-8
 trim_trailing_whitespace = false
 insert_final_newline = false
+
+[**.yaml]
+indent_style = space
