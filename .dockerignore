@@ -32,5 +32,6 @@
 **/dist
 **/data
 *.tar
+*.sql
 LICENSE
 README.md
