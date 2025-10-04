@@ -526,6 +526,7 @@ function updateSelectedDepartment(departmentElement) {
 				);
 				drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
 				renderNetwork(nodes, edges);
+				iLB();
 			})
 			.catch((err) => {
 				console.error(`載入關係圖失敗:`, err);
@@ -638,7 +639,7 @@ function searchUniversitiesAndDepartments(searchTerm) {
 
 // 圖片容器點擊事件
 function initializeImageContainers() {
-	const imageContainers = document.querySelectorAll(".image-container");
+	const imageContainers = document.querySelectorAll(".image-container.large");
 	imageContainers.forEach((container) => {
 		container.addEventListener("mouseenter", function () {
 			this.style.cursor = "pointer";
@@ -879,5 +880,33 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 				},
 			},
 		},
+	});
+}
+function iLB(){
+		
+	const containers = document.querySelectorAll('.image-container.medium')
+	const lightbox = document.getElementById('lightbox')
+	const LBcontent = document.getElementById('lightbox-content')
+	const MC = document.querySelector('.main-content')
+	let ACTcontainer = null;
+	let nS = null;
+	containers.forEach(container => {
+		container.addEventListener('click',function(){
+			ACTcontainer = container;
+			nS = container.nextSibling;
+			lightbox.style.display='grid';
+			LBcontent.innerHTML='';
+			
+			LBcontent.appendChild(container);
+			
+		})
+	})
+	lightbox.addEventListener('click',function(e){
+		if(e.target == lightbox){
+			MC.insertBefore(ACTcontainer,nS);
+			lightbox.style.display='none';
+			LBcontent.innerHTML='';
+			ACTcontainer = null;
+		}
 	});
 }
