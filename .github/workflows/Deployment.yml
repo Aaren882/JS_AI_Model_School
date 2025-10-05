@@ -25,7 +25,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: user/app:latest
+          tags: ${{ github.repository }}:latest
           secrets: |
               GIT_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN  }}
       
