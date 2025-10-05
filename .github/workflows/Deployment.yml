@@ -27,17 +27,17 @@ jobs:
         uses: ASzc/change-string-case-action@v6
         with:
           string: ${{ github.repository }}
-      - 
-        id: step2
-        run: echo ${{ steps.string.outputs.lowercase }}
-      # -
-      #   name: Build and push
-      #   uses: docker/build-push-action@v6
-      #   with:
-      #     push: true
-      #     tags: ${{ steps.toLowerCase.outputs.lowerCaseValue }}:latest
-      #     secrets: |
-      #         GIT_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN  }}
+      # - 
+      #   id: step2
+      #   run: echo ${{ steps.string.outputs.lowercase }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ${{ steps.string.outputs.lowercase }}:latest
+          secrets: |
+              GIT_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN  }}
       
     # - name: Setup Tailscale
     #   uses: tailscale/github-action@v2
