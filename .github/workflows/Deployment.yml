@@ -2,7 +2,7 @@ name: Deployment
 
 on: 
   workflow_dispatch:
-  push:
+  release:
 
 jobs:
   build-and-test:
