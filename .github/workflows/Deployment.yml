@@ -70,14 +70,14 @@ jobs:
           tags: tag:ci
       - 
         name: Deploy to Staging server
-        uses: marcodallasanta/ssh-scp-deploy@v1.2.0
+        uses: kostya-ten/ssh-server-deploy@v4
         with:
-          local: './compose.yaml'                                                  # Local file path - REQUIRED false - DEFAULT ./
-          remote: ${{secrets.REMOTE_DIRECTORY}}                                                 # Remote file path - REQUIRED false - DEFAULT ~/
+          scp_source: 'compose.yaml'                                                  # Local file path - REQUIRED false - DEFAULT ./
+          scp_target: ${{secrets.REMOTE_DIRECTORY}}                                                 # Remote file path - REQUIRED false - DEFAULT ~/
           host: ${{secrets.SSH_HOST}}                                      # Remote server address - REQUIRED true
-          user: root                                      # Remote server user - REQUIRED true
-          key: ${{secrets.SSH_PRIVATE_KEY}}                                        # Remote server private key - REQUIRED at least one of "password" or "key" 
+          username: root                                      # Remote server user - REQUIRED true
+          private_key: ${{secrets.SSH_PRIVATE_KEY}}                                        # Remote server private key - REQUIRED at least one of "password" or "key" 
           # pre_upload: echo "Hello bro !!"  # Command to run via ssh before scp upload - REQUIRED false
-          post_upload: echo "This will be executed after the upload!"
-          ssh_options: -o StrictHostKeyChecking=no                     # A set of ssh_option separated by -o - REQUIRED false - DEFAULT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+          after_script: echo "This will be executed after the upload!"
+          # ssh_options: -o StrictHostKeyChecking=no                     # A set of ssh_option separated by -o - REQUIRED false - DEFAULT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
           # scp_options: -v                                              # Flags to use during scp - REQUIRED false - DEFAULT ''
