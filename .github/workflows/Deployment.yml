@@ -70,7 +70,7 @@ jobs:
         uses: marcodallasanta/ssh-scp-deploy@v1.2.0
         with:
           local: './'                                                  # Local file path - REQUIRED false - DEFAULT ./
-          remote: ${{secrets.REMOTE_DIRECTORY}}                                                 # Remote file path - REQUIRED false - DEFAULT ~/
+          remote: 'C:\code\'                                                 # Remote file path - REQUIRED false - DEFAULT ~/
           host: ${{secrets.SSH_HOST}}                                      # Remote server address - REQUIRED true
           user: root                                      # Remote server user - REQUIRED true
           key: ${{secrets.SSH_PRIVATE_KEY}}                                        # Remote server private key - REQUIRED at least one of "password" or "key" 
