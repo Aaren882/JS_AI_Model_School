@@ -65,7 +65,6 @@ jobs:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
-          targets: root@${{secrets.SSH_HOST}}
       - 
         name: Deploy to Staging server
         uses: marcodallasanta/ssh-scp-deploy@v1.2.0
