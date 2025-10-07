@@ -890,20 +890,27 @@ function iLB(){
 	const MC = document.querySelector('.main-content')
 	let ACTcontainer = null;
 	let nS = null;
+	const dummy =document.createElement('div');
 	containers.forEach(container => {
 		container.addEventListener('click',function(){
+			if(!ACTcontainer){
+			dummy.className='placeholder-image';
+			dummy.style.width=container.offsetWidth+'px';
+			dummy.style.height=container.offsetHeight+'px';
+			dummy.style.display='inline-block'
 			ACTcontainer = container;
 			nS = container.nextSibling;
-			lightbox.style.display='grid';
+			container.parentNode.insertBefore(dummy,nS);
+			lightbox.style.display='block';
 			LBcontent.innerHTML='';
-			
 			LBcontent.appendChild(container);
-			
+			}
 		})
 	})
 	lightbox.addEventListener('click',function(e){
 		if(e.target == lightbox){
-			MC.insertBefore(ACTcontainer,nS);
+			dummy.style.display='none';
+			MC.insertBefore(ACTcontainer,dummy);
 			lightbox.style.display='none';
 			LBcontent.innerHTML='';
 			ACTcontainer = null;
