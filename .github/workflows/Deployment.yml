@@ -3,11 +3,11 @@ name: Deployment
 on: 
   workflow_dispatch:
   push:
-    # tags:
-    #   - 'v*.*.*' # Trigger on new Git tags like v1.0.0
+    tags:
+      - 'v*.*.*' # Trigger on new Git tags like v1.0.0
 
 jobs:
-  build-and-test:
+  Docker_Push:
     runs-on: ubuntu-latest
   
     steps:
@@ -57,6 +57,9 @@ jobs:
             GIT_VERSION_HASH=${{ github.sha }}
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN  }}
+  Deployment:
+    runs-on: ubuntu-latest
+    steps:
       - 
         name: Checkout
         uses: actions/checkout@v5.0.0
