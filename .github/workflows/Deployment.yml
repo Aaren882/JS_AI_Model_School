@@ -57,9 +57,7 @@ jobs:
             GIT_VERSION_HASH=${{ github.sha }}
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN  }}
-  Deployment:
-    runs-on: ubuntu-latest
-    steps:
+      # SSH Remote the SERVER for deployment
       - 
         name: Checkout
         uses: actions/checkout@v5.0.0
