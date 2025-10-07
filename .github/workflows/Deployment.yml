@@ -59,7 +59,7 @@ jobs:
       #       GIT_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN  }}
       - 
         name: Checkout
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v5.0.0
       - 
         name: Setup Tailscale
         uses: tailscale/github-action@v3
@@ -78,6 +78,8 @@ jobs:
           user: root                                      # Remote server user - REQUIRED true
           key: ${{secrets.SSH_PRIVATE_KEY}}                                        # Remote server private key - REQUIRED at least one of "password" or "key" 
           # pre_upload: echo "Hello bro !!"  # Command to run via ssh before scp upload - REQUIRED false
-          # post_upload: Remove-Item -Path '${{secrets.REMOTE_DIRECTORY }}/compose.yaml'  # Command to run via ssh after scp upload - REQUIRED false
+          post_upload: |
+            cd ${{secrets.REMOTE_DIRECTORY}} 
+            docker compose --build -d  # Command to run via ssh after scp upload - REQUIRED false
           ssh_options: -o StrictHostKeyChecking=no                     # A set of ssh_option separated by -o - REQUIRED false - DEFAULT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
           # scp_options: -v                                              # Flags to use during scp - REQUIRED false - DEFAULT ''
