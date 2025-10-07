@@ -43,12 +43,11 @@ services:
     expose:
       - 5432
   ollama:
+    image: docker.io/ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
     volumes:
       - ollama-data:/root/.ollama
-    container_name: ollama
-    tty: true
-    restart: unless-stopped
-    image: docker.io/ollama/ollama:latest
     ports:
       - 11434:11434
     environment:
