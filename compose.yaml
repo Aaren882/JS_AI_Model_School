@@ -16,7 +16,7 @@ services:
       OLLAMA_MODEL: gemma3
       DB_IP: db-connect
       DB_PW: pw
-      DB_PORT: 5442
+      DB_PORT: 5432
       PORT: 3000
     volumes:
       - analyze-data:/var/lib/university_analyze
