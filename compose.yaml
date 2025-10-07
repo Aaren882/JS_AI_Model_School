@@ -9,22 +9,27 @@
 # https://github.com/docker/awesome-compose
 services:
   back-end:
-    build:
-      context: .
+    image: aaren882/js_ai_model_school
+    container_name: server
     environment:
-      NODE_ENV: production
+      OLLAMA_HOST_URL: http://ollama:11434
+      OLLAMA_MODEL: gemma3
       DB_IP: db-connect
       DB_PW: pw
       DB_PORT: 5432
       PORT: 9000
     volumes:
       - analyze-data:/var/lib/university_analyze
+    depends_on:
+      - ollama
+      - db-connect
     ports:
       - 3000:9000 # To <- FROM
     expose:
       - 9000
   db-connect:
     image: postgres:latest
+    container_name: pg
     restart: always
     shm_size: 128mb
     environment:
@@ -37,6 +42,23 @@ services:
       - 5442:5432
     expose:
       - 5432
+  ollama:
+    image: docker.io/ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - 11434:11434
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all 
+              capabilities: [gpu]
 
 # Use for remote DB admin
   adminer:
@@ -54,8 +76,11 @@ services:
         target: /pgpass
     ports:
       - 5050:80
+
+# Volumes
 volumes:
   analyze-data:
+  ollama-data:
   db-data:
   pgadmin-data:
   

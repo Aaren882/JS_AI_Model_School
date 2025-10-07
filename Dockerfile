@@ -7,15 +7,19 @@
 # Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
 
 ARG NODE_VERSION=22.19.0
+ARG GIT_VERSION_TAG=unspecified
+ARG GIT_COMMIT_MESSAGE=unspecified
+ARG GIT_VERSION_HASH=unspecified
 
 FROM node:${NODE_VERSION}-alpine
 
 # Use production node environment by default.
 ENV NODE_ENV=production \
-		VIEW_ENGINE=ejs \
-		DB_PW=example \
-		DB_PORT=5433 \
-		SERVER_NAME="Nigga Server" \
+		OLLAMA_HOST_URL=http://ollama:11434 \
+		OLLAMA_MODEL=gemma3 \
+		DB_IP=DB_IP \
+		DB_PW=password \
+		DB_PORT=5432 \
 		PORT=9000
 
 VOLUME /var/lib/university_analyze
@@ -23,16 +27,21 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-# RUN npm install
+RUN npm install
+
+# Read files for the information in your application
+RUN echo $GIT_VERSION_TAG > GIT_VERSION_TAG.txt
+RUN echo $GIT_COMMIT_MESSAGE > GIT_COMMIT_MESSAGE.txt
+RUN echo $GIT_VERSION_HASH > GIT_VERSION_HASH.txt
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.npm to speed up subsequent builds.
 # Leverage a bind mounts to package.json and package-lock.json to avoid having to copy them into
 # into this layer.
-RUN --mount=type=bind,source=package.json,target=package.json \
-    --mount=type=bind,source=package-lock.json,target=package-lock.json \
-    --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev
+# RUN --mount=type=bind,source=package.json,target=package.json \
+#     --mount=type=bind,source=package-lock.json,target=package-lock.json \
+#     --mount=type=cache,target=/root/.npm \
+#     npm ci --omit=dev
 
 # Run the application as a non-root user.
 USER node
