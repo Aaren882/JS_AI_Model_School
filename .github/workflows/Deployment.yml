@@ -69,7 +69,7 @@ jobs:
         name: Deploy to Staging server
         uses: marcodallasanta/ssh-scp-deploy@v1.2.0
         with:
-          local: './compose.yaml'                                                  # Local file path - REQUIRED false - DEFAULT ./
+          local: 'compose.yaml'                                                  # Local file path - REQUIRED false - DEFAULT ./
           remote: ${{secrets.REMOTE_DIRECTORY}}                                                 # Remote file path - REQUIRED false - DEFAULT ~/
           host: ${{secrets.SSH_HOST}}                                      # Remote server address - REQUIRED true
           user: ${{secrets.SSH_USER}}                                      # Remote server user - REQUIRED true
