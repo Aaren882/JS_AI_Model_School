@@ -79,8 +79,6 @@ jobs:
           key: ${{secrets.SSH_PRIVATE_KEY}}                                        # Remote server private key - REQUIRED at least one of "password" or "key" 
           # pre_upload: echo "Hello bro !!"  # Command to run via ssh before scp upload - REQUIRED false
           post_upload: |
-            docker login -u ${{ secrets.DOCKERHUB_USERNAME }}
-            ${{ secrets.DOCKERHUB_TOKEN }}
             docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml up -d
           ssh_options: -o StrictHostKeyChecking=no                     # A set of ssh_option separated by -o - REQUIRED false - DEFAULT -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
           # scp_options: -v                                              # Flags to use during scp - REQUIRED false - DEFAULT ''
