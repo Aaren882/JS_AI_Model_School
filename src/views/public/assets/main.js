@@ -511,8 +511,8 @@ function updateSelectedDepartment(departmentElement) {
 				drawLineChart(
 					"chart-line-3",
 					nodes,
-					"正備取有效性",
-					"admissionvalidity"
+					"甄選名額流去登分比例",
+					"shiftratio"
 				);
 				drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
 				renderNetwork(nodes, edges);
