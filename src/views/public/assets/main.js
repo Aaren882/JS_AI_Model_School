@@ -497,14 +497,12 @@ function updateSelectedDepartment(departmentElement) {
 			mode: "group",
 			fullText: `${school.name} - ${dept.name} (${currentYear}年)`,
 		};
-		const code = deptCode;
 
 		// 載入並繪製 network
 		fetch(`api/getRelationData?year=${currentYear}&id=${deptCode}`)
 			.then((res) => res.json())
 			.then((res) => {
 				const { nodes, edges } = res;
-				console.log(res);
 
 				drawLineChart(
 					"chart-line-1",
