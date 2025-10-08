@@ -52,6 +52,14 @@ async function createDataView(year) {
         END
       ) AS AdmissonRate,
       r_score AS r_score,
+      (
+        CASE
+        WHEN 甄選名額流去登分比例 IS NULL THEN 
+          0
+        ELSE
+          甄選名額流去登分比例
+        END
+      ) AS ShiftRatio,
       COALESCE(
         "Distr_${year}".錄取總分數 /
         (
