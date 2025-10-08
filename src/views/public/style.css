@@ -506,6 +506,7 @@ canvas{
 
 .image-label {
     position: absolute;
+    cursor: help;
     top: 16px;
     left: 16px;
     background: rgba(255, 255, 255, 0.95);
@@ -519,6 +520,34 @@ canvas{
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     z-index: 10;
     letter-spacing: 0.3px;
+    overflow: visible;
+}
+
+.image-label::after{
+    content: attr(tooltip);
+    position: absolute;
+    text-decoration: underline;
+    visibility: visible;
+    background-color: #555;
+    color: #fff;
+    text-align: left;
+    font-size: 1.05rem;
+    min-width: 170%;
+    border: 20px;
+    padding: 5px 10px;
+    z-index: 112;
+    top: 125%;
+    left: 15%;
+    transform: translateY(-5px);
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space:pre-line;
+    overflow: visible;
+}
+.image-label:hover:after{
+    visibility: visible;
+    opacity: 0.8;
+    transform: translateY(0);
 }
 
 .placeholder-text {

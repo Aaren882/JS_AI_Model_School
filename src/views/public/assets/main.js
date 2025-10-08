@@ -514,17 +514,17 @@ function updateSelectedDepartment(departmentElement) {
 				drawLineChart(
 					"chart-line-1",
 					nodes,
-					"一階通過率",
-					"firststagepassrate"
+					"錄取率",
+					"admissonrate"
 				);
 				drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
 				drawLineChart(
 					"chart-line-3",
 					nodes,
-					"正備取有效性",
+					"甄選名額留去登分比例",
 					"admissionvalidity"
 				);
-				drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
+				drawLineChart("chart-line-4", nodes, "甄選名額留去登分比例", "posvalid");
 				renderNetwork(nodes, edges);
 				iLB();
 			})
@@ -809,7 +809,7 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 					formatter: function (value) {
 						return value.toFixed(2); // 小數點兩位
 					},
-					font: { size: 10 },
+					font: { size: 10},
 				},
 				title: { display: true, text: chartName },
 			},

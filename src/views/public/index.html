@@ -56,21 +56,32 @@
 
             <!-- 第一行圖片 -->
             <div class="image-container medium">
-                <div class="image-label">一階通過率(解釋)</div>
+                <div class="image-label" tooltip="你知道的">錄取率(解釋)</div>
                 <canvas id="chart-line-1"></canvas>
             </div>
             <div class="image-container medium">
-                <div class="image-label">R-Score & 分發錄取指數(解釋)</div>
+                <div class="image-label" tooltip="R計算：當年度的所有比賽(各校系為選手，以學生的去向為輸贏，採取一般生正取及一般生備取且錄取為有效資料)使用Trueskill來計算	
+                
+                R含意：在同個群集中，可用此資料來去做排名比較，更好的推斷該科系在此群集的學生熱門程度
+
+                錄取指標計算：登記分發總分數/登記分發總加權倍率
+                
+                錄取含意：同個群集內的平均分數排名跟R_score排名；如果R排名較低，平均分數較高，可能代表該系所類群被低估，反之亦然
+">R-Score & 分發錄取指數(解釋)</div>
                 <canvas id="chart-line-2"></canvas>
             </div>
 
             <!-- 第二行圖片 -->
             <div class="image-container medium">
-                <div class="image-label">正備取有效性(解釋)</div>
+                <div class="image-label" tooltip="計算方式：名額空缺/預計招生名額	
+                
+                代表含意：甄選名額留去登分比例越高，會讓登記分發成績下降">甄選名額留去登分比例(解釋)</div>
                 <canvas id="chart-line-3"></canvas>
             </div>
             <div class="image-container medium">
-                <div class="image-label">正取有效性(解釋)</div>
+                <div class="image-label" tooltip="計算方式：一般生正取錄取人數/一般生正取總人數
+                
+                代表含意：正取有效性高代表你的正取生很樂意來你的學校，代表你的招生策略有料，也代表該校系在該類群學生之間熱門程度較高；如果正取有效性低，代表招生策略或對學生吸引度不足">正取有效性(解釋)</div>
                 <canvas id="chart-line-4"></canvas>
             </div>
 
