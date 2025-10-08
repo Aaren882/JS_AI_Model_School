@@ -502,14 +502,9 @@ function updateSelectedDepartment(departmentElement) {
 		// 載入並繪製 network
 		fetch(`api/getRelationData?year=${currentYear}&id=${deptCode}`)
 			.then((res) => res.json())
-			.then((relations) => {
-				const edges = relations;
-				const nodes = [];
-				relations.flat().forEach((n) => {
-					if (!nodes.includes(n)) {
-						nodes.push(n);
-					}
-				});
+			.then((res) => {
+				const { nodes, edges } = res;
+				console.log(res);
 
 				drawLineChart(
 					"chart-line-1",
@@ -717,13 +712,9 @@ function renderNetwork(nodes, edges) {
 		elements: [
 			...nodes.map((n) => ({
 				data: {
-					id: n,
-					label: localizeDept(n, [
-						"deptcode",
-						"schoolname",
-						"deptname",
-						"r_score",
-					]),
+					id: n[0],
+					label:
+						localizeDept(n[0], ["deptcode", "schoolname", "deptname"]) + n[1],
 				},
 			})),
 			...edges.map((e) => ({ data: { source: e[0], target: e[1] } })),
@@ -783,6 +774,7 @@ function safeDraw(containerId, chartConfig) {
 	chartInstances[containerId] = new Chart(ctx, chartConfig);
 }
 function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
+	nodes = nodes.map(x => x[0]);
 	const values = nodes.map((d) => parseFloat(localizeDept(d, [dataKey])));
 	const labels = nodes.map((d) => dataParser(d, ["schoolname", "deptname"]));
 
@@ -817,9 +809,9 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 	});
 }
 function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
-	const labels = nodes.map((d) => dataParser(d, ["schoolname", "deptname"]));
-	const rValues = nodes.map((d) => parseFloat(localizeDept(d, [rKey])));
-	const avgValues = nodes.map((d) => parseFloat(localizeDept(d, [avgKey])));
+	const labels = nodes.map((d) => dataParser(d[0], ["schoolname", "deptname"]));
+	const rValues = nodes.map((d) => d[1]);
+	const avgValues = nodes.map((d) => parseFloat(localizeDept(d[0], [avgKey])).toFixed(2));
 
 	safeDraw(containerId, {
 		type: "line",
@@ -854,9 +846,6 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 				datalabels: {
 					color: "#000",
 					align: "top",
-					formatter: function (value) {
-						return value.toFixed(2); // 小數點兩位
-					},
 					font: { size: 10 },
 				},
 			},

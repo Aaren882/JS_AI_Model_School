@@ -89,7 +89,7 @@ export class dataBase_methods {
 		console.log(`📄 \x1b[33m- Checking ${year} Tables.\x1b[0m`);
 
 		//- Check table exist
-		const total_Should_Exist = 1;
+		const total_Should_Exist = 3;
 
 		try {
 			let res = await dbClient.query(query);

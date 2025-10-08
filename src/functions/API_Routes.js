@@ -3,7 +3,7 @@ import showdown from "showdown";
 import { QueryChat } from "./ollamaQuery.js";
 import dbClient from "./dataBase_Client.js";
 import { dataBase_methods } from "./dataBase_Client.js";
-import { Ts_data } from "./ts_validation.js";
+import { Ts_matching_Ratings } from "./ts_validation.js";
 
 const showdownCt = new showdown.Converter(); //- MD convertor
 const API_router = Express.Router();
@@ -87,8 +87,7 @@ API_router.get("/getRelationData", async (req, res) => {
 		let { year, id } = req.query;
 		let year_Int = parseInt(year);
 
-		const ts_data = await Ts_data(year_Int);
-		const relations = ts_data.getLevelNodes(id);
+		const relations = await Ts_matching_Ratings(year_Int, id);
 
 		res.status(200).json(relations);
 	} catch (err) {

@@ -50,7 +50,7 @@ async function createDataView(year) {
           cast ("一般生招生名額" AS DOUBLE PRECISION)
           )
         END
-      ) AS FirstStagePassRate,
+      ) AS AdmissonRate,
       r_score AS r_score,
       COALESCE(
         "Distr_${year}".錄取總分數 /
