@@ -79,5 +79,7 @@ jobs:
           host: ${{secrets.SSH_HOST}}
           username: ${{secrets.SSH_USER}}
           private_key: ${{secrets.SSH_PRIVATE_KEY}}
-          before_script: docker compose pull
-          after_script: docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml up --build -d
+          before_script: |
+            docker compose pull
+          after_script: |
+            docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml up -d
