@@ -35,14 +35,15 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           flavor: |
-            latest=false
+            latest=auto
           # list of Docker images to use as base name for tags
           images: |
             ${{ steps.string.outputs.lowercase }}
           # generate Docker tags based on the following events/attributes
           tags: |
             type=semver,pattern={{version}}
-      - name: Scrape build info
+      - 
+        name: Scrape build info
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       -
         name: Build and push
@@ -78,4 +79,7 @@ jobs:
           host: ${{secrets.SSH_HOST}}
           username: ${{secrets.SSH_USER}}
           private_key: ${{secrets.SSH_PRIVATE_KEY}}
-          after_script: docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml up -d
+          before_script: |
+            docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml pull
+          after_script: |
+            docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml up -d
