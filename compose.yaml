@@ -9,7 +9,7 @@
 # https://github.com/docker/awesome-compose
 services:
   back-end:
-    image: aaren882/js_ai_model_school
+    image: aaren882/js_ai_model_school:latest
     container_name: server
     environment:
       OLLAMA_HOST_URL: http://ollama:11434
