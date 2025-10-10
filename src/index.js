@@ -5,11 +5,9 @@ import path from "path";
 import API_router from "./functions/API_Routes.js";
 import { dataBase_methods } from "./functions/dataBase_Client.js";
 
-//- TEST
-[111,112,113].forEach(async x => {
-	await dataBase_methods.initDatabase(x);
-});
-//- ------ -//
+//- Initialization
+	//- Check table existence
+		await Promise.all([111, 112, 113].map((x) => dataBase_methods.initDatabase(x)));
 
 const __dirname = process.cwd() + "/src/views";
 
