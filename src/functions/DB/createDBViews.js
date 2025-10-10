@@ -55,7 +55,7 @@ async function createDataView(year) {
       (
         CASE
         WHEN 甄選名額流去登分比例 IS NULL THEN 
-          0
+          -1
         ELSE
           甄選名額流去登分比例
         END
