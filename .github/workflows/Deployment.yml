@@ -80,6 +80,6 @@ jobs:
           username: ${{secrets.SSH_USER}}
           private_key: ${{secrets.SSH_PRIVATE_KEY}}
           after_script: | 
-            docker compose down
-            docker compose pull
-            docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml up --build -d
+            docker compose down;
+            docker compose pull;
+            docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml up --build -d;
