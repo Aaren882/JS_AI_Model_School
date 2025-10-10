@@ -82,4 +82,4 @@ jobs:
           before_script: |
             docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml pull
           after_script: |
-            docker compose pull docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml up -d
+            docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml up -d
