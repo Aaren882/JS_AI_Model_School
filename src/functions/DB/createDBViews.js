@@ -5,7 +5,7 @@ import { Ts_data } from "../ts_validation.js";
 async function createDataView(year) {
   const query_TableName = `QUERY_${year}${process.env.QUERY_POSTFIX || ""}`;
   const query = {
-  text: `
+		text: `
       SELECT 
       (
         SUBSTRING(
@@ -56,16 +56,11 @@ async function createDataView(year) {
       , 0) AS "avg"
     FROM Public."Distr_${year}"
     RIGHT JOIN Public."Data_${year}" ON 
-      "Data_${year}".學校名稱 LIKE 
-      FORMAT(
-        '%s%s(%s)',
-        "Distr_${year}".學校名稱,
-        "Distr_${year}".系科組學程名稱,
-        "Distr_${year}".群別代號
-      )
-    WHERE "Data_${year}".學校名稱 IS NOT NULL
+      "Data_${year}".學校名稱 LIKE "Distr_${year}".學校名稱 AND
+      POSITION("Data_${year}".系科組學程名稱 IN "Distr_${year}".系科組學程名稱) > 0 AND
+      "Distr_${year}".群別代號 LIKE "Distr_${year}".群別代號
     `,
-  };
+	};
   
 	const create = {
 		name: `create-QUERY_${year}_VIEW_Table`,
