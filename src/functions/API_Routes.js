@@ -48,7 +48,7 @@ API_router.get("/getSchoolAnalyze", async (req, res) => {
 
 	const query = `SELECT 
     "校系代碼" as id,
-    "學校" as name,
+    "學校名稱" as name,
     "正備取有效性" as posvalid
   FROM public."Data_${int_Year}"
   where 
