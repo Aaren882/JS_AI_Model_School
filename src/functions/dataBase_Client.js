@@ -41,7 +41,7 @@ function getPrompt(year = "0", post = "") {
       "校系代碼" as id,
       "學校" as name,
       "正備取有效性" as posvalid
-    FROM public."Data_${year}"
+    FROM public."Data_${year}_BK"
     where "正備取有效性" != 0 ${post}
   `;
 }

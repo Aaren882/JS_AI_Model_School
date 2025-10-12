@@ -62,25 +62,25 @@ async function createDataView(year) {
         END
       ) AS ShiftRatio,
       COALESCE(
-        "Distr_${year}".錄取總分數 /
+        "Distr_${year}_BK".錄取總分數 /
         (
-          "Distr_${year}".國文 +
-          "Distr_${year}".英文 +
-          "Distr_${year}".數學 +
-          "Distr_${year}".專業一 +
-          "Distr_${year}".專業二
+          "Distr_${year}_BK".國文 +
+          "Distr_${year}_BK".英文 +
+          "Distr_${year}_BK".數學 +
+          "Distr_${year}_BK".專業一 +
+          "Distr_${year}_BK".專業二
         )
       , 0) AS "avg"
-    FROM Public."Distr_${year}"
-    RIGHT JOIN Public."Data_${year}" ON 
-      "Data_${year}".學校 LIKE 
+    FROM Public."Distr_${year}_BK"
+    RIGHT JOIN Public."Data_${year}_BK" ON 
+      "Data_${year}_BK".學校 LIKE 
       FORMAT(
         '%s%s(%s)',
-        "Distr_${year}".學校名稱,
-        "Distr_${year}".系科組學程名稱,
-        "Distr_${year}".招生群別
+        "Distr_${year}_BK".學校名稱,
+        "Distr_${year}_BK".系科組學程名稱,
+        "Distr_${year}_BK".招生群別
       )
-    WHERE "Data_${year}".學校 IS NOT NULL
+    WHERE "Data_${year}_BK".學校 IS NOT NULL
     `,
 	};
 	const create = {
@@ -108,7 +108,7 @@ async function createDataView(year) {
 	const insert_R = {
 		name: `insert_R_Score-${year}_VIEW_Table`,
 		text: `
-      UPDATE public."Data_${year}"
+      UPDATE public."Data_${year}_BK"
         SET 
           r_score = new_data.score
         FROM (VALUES
@@ -127,7 +127,7 @@ async function createDataView(year) {
   const insert_ShiftRatios = {
 		name: `insert_ShiftRatios-${year}_VIEW_Table`,
 		text: `
-      UPDATE public."Data_${year}"
+      UPDATE public."Data_${year}_BK"
         SET 
           甄選名額流去登分比例 = new_data.shiftratio
         FROM (VALUES
@@ -179,13 +179,13 @@ async function createDistrView(year) {
             專業二
           )
         ) AS "avg"
-      FROM public."Distr_${year}"
+      FROM public."Distr_${year}_BK"
     `,
 	};
 	const create = {
-		name: `create-Distr_${year}_VIEW_Table`,
+		name: `create-Distr_${year}_BK_VIEW_Table`,
 		text: `
-      CREATE OR REPLACE View "QUERY_Distr_${year}" AS
+      CREATE OR REPLACE View "QUERY_Distr_${year}_BK" AS
         ${query.text}
     `,
 	};
@@ -193,7 +193,7 @@ async function createDistrView(year) {
 	//- create view table
 	await dbClient.query(create);
 	console.log(
-		`  ✅\x1b[32m-- Successfully create \"QUERY_Distr_${year}\" view.👁️\x1b[0m`
+		`  ✅\x1b[32m-- Successfully create \"QUERY_Distr_${year}_BK\" view.👁️\x1b[0m`
 	);
 }
 

@@ -48,7 +48,7 @@ class Ts {
 			text: `
 				SELECT 
 					校系代碼 AS id
-				FROM public."Data_${year}"
+				FROM public."Data_${year}_BK"
 			`,
 			rowMode: "array"
 		};
