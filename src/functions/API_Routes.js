@@ -1,4 +1,4 @@
-import Express from "express";
+import Express, { text } from "express";
 import showdown from "showdown";
 import { QueryChat } from "./ollamaQuery.js";
 import dbClient from "./dataBase_Client.js";
@@ -46,30 +46,68 @@ API_router.get("/getSchoolAnalyze", async (req, res) => {
 	let int_Year = parseInt(year);
 	let int_ID = parseInt(schoolID);
 
-	const query = `SELECT 
-    "校系代碼" as id,
-    "學校名稱" as name,
-    "正備取有效性" as posvalid
-  FROM public."Data_${int_Year}"
-  where 
-    ("正備取有效性" != 0) AND
-    ("校系代碼" = ${int_ID})`;
-
 	try {
+		const relations = await Ts_matching_Ratings(int_Year, schoolID);
+		const nodes = relations.nodes.map((x) => x[0]).join(",");
+		if (nodes === "") throw `API error \"getSchoolAnalyze\" no Nodes were found !!!`;
+
 		//- Asking AI
+		const query = {
+			text: `
+				SELECT 
+					"校系代碼",
+					"Data_${int_Year}".學校名稱,
+					"Data_${int_Year}".系科組學程名稱,
+					"Distr_${int_Year}".招生名額 AS 統測登記分發招生名額,
+					"Distr_${int_Year}".錄取人數 AS 統測登記分發錄取人數,
+					COALESCE(
+						"Distr_${int_Year}".錄取總分數 /
+						(
+							"Distr_${int_Year}".國文 +
+							"Distr_${int_Year}".英文 +
+							"Distr_${int_Year}".數學 +
+							"Distr_${int_Year}".專業一 +
+							"Distr_${int_Year}".專業二
+						)
+						, -1) AS 統測登記分發錄取平均分數,
+						
+						"Data_${int_Year}"."正取總人數" AS 甄選一般生正取總人數,
+						"Data_${int_Year}"."備取總人數" AS 甄選一般生備取總人數,
+						"Data_${int_Year}"."一般生正取錄取人數" AS 甄選一般生正取錄取人數,
+						"Data_${int_Year}"."一般生備取錄取人數" AS 甄選一般生備取錄取人數,
+						"Data_${int_Year}"."一般生名額空缺" AS 甄選一般生名額空缺,
+						"Data_${int_Year}"."一般生招生名額" AS 甄選一般生招生名額,
+						"Data_${int_Year}"."報到人數" AS 甄選一般生報到人數,
+						"Data_${int_Year}"."正備取有效性" AS 甄選一般生正備取有效性,
+						"Data_${int_Year}"."甄選名額流去登分比例" AS 甄選名額流去登分比例,
+						"Data_${int_Year}"."r_score"
+						
+				FROM Public."Distr_${int_Year}"
+				RIGHT JOIN Public."Data_${int_Year}" ON 
+					"Data_${int_Year}".學校名稱 LIKE "Distr_${int_Year}".學校名稱 AND
+					POSITION("Data_${int_Year}".系科組學程名稱 IN "Distr_${int_Year}".系科組學程名稱) > 0 AND
+					"Distr_${int_Year}".群別代號 LIKE "Distr_${int_Year}".群別代號
+				WHERE "Data_${int_Year}"."校系代碼" IN (${nodes})
+				ORDER BY "r_score" DESC
+			`,
+		};
 		let q = await dbClient.query(query);
+		const target = q.rows.find((x) => int_ID === x["校系代碼"]);
 
 		//- Construct data format
-		const data = {};
-		q.rows.forEach((elem) => {
-			let { id, name, posvalid } = elem;
-			data[id] = {
-				name: name,
-				posvalid: posvalid,
-			};
-		});
-
-		let chat_Res = await QueryChat(`${data}`, "這間學校很受歡迎嗎?");
+		// const data = {};
+		// q.rows.forEach((elem) => {
+		// 	let { id, name, posvalid } = elem;
+		// 	data[id] = {
+		// 		name: name,
+		// 		posvalid: posvalid,
+		// 	};
+		// });
+		
+		const data = q.rows.map((x) => {
+			return { [x["校系代碼"]]: x };
+		})[0];
+		let chat_Res = await QueryChat(int_Year, data, target, "");
 		chat_Res = showdownCt.makeHtml(chat_Res.message.content);
 		res.status(200).json({ chat: chat_Res });
 	} catch (err) {
