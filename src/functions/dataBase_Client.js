@@ -76,12 +76,13 @@ export class SchoolDB_Client {
 
 export class dataBase_methods {
 	static async initDatabase(year = 111) {
+		const table_name = `QUERY_${year}`;
 		const query = {
 			text: `
         SELECT 
           cast (COUNT (*) AS Integer)
         FROM information_schema.views
-        WHERE table_name LIKE 'QUERY_%'
+        WHERE table_name LIKE '${table_name}'
       `,
 			rowMode: "array",
 		};
@@ -89,12 +90,10 @@ export class dataBase_methods {
 		console.log(`📄 \x1b[33m- Checking ${year} Tables.\x1b[0m`);
 
 		//- Check table exist
-		const total_Should_Exist = 3;
-
 		try {
 			let res = await dbClient.query(query);
 
-			if (total_Should_Exist != res.rows[0]) {
+			if (0 == res.rows[0]) {
 				await Promise.all([QueryViews(year)]);
 			}
 		} catch (err) {
