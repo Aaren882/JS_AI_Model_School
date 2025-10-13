@@ -1,3 +1,20 @@
+import markdownit from "https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/+esm";
+import markdownItMultimdTable from "https://cdn.jsdelivr.net/npm/markdown-it-multimd-table@4.2.3/+esm";
+
+//- Markdown Settings
+const md = markdownit({
+	html: true,
+	linkify: true,
+	typographer: true,
+	breaks: true,
+}).use(markdownItMultimdTable, {
+	multiline: false,
+	rowspan: true,
+	headerless: false,
+	multibody: true,
+	aotolabel: true,
+});
+
 // 全局變量
 let selectedDepartment = null;
 let selectedUniversity = null;
@@ -93,18 +110,18 @@ function simplifyCategory(category) {
 		"07": "設計",
 		"08": "工管",
 		"09": "商管",
-		"10": "衛護",
-		"11": "食品",
-		"12": "幼保",
-		"13": "家政",
-		"14": "農業",
-		"15": "英語",
-		"16": "日語",
-		"17": "餐旅",
-		"18": "海事",
-		"19": "水產",
-		"20": "影視",
-		"21": "資管",
+		10: "衛護",
+		11: "食品",
+		12: "幼保",
+		13: "家政",
+		14: "農業",
+		15: "英語",
+		16: "日語",
+		17: "餐旅",
+		18: "海事",
+		19: "水產",
+		20: "影視",
+		21: "資管",
 	};
 	return mapping[category] || category;
 }
@@ -504,12 +521,7 @@ function updateSelectedDepartment(departmentElement) {
 			.then((res) => {
 				const { nodes, edges } = res;
 
-				drawLineChart(
-					"chart-line-1",
-					nodes,
-					"錄取率",
-					"admissonrate"
-				);
+				drawLineChart("chart-line-1", nodes, "錄取率", "admissonrate");
 				drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
 				drawLineChart(
 					"chart-line-3",
@@ -532,10 +544,11 @@ function updateSelectedDepartment(departmentElement) {
         `;
 
 		//- Get AI analyze
+
 		fetch(`/api/getSchoolAnalyze?year=${currentYear}&schoolID=${deptCode}`)
 			.then(async (res) => {
 				let { chat } = await res.json();
-				AITextBox.innerHTML = chat;
+				AITextBox.innerHTML = md.render(chat);
 			})
 			.catch((e) => {
 				AITextBox.textContent = `${e.message}`;
@@ -772,7 +785,7 @@ function safeDraw(containerId, chartConfig) {
 	chartInstances[containerId] = new Chart(ctx, chartConfig);
 }
 function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
-	nodes = nodes.map(x => x[0]);
+	nodes = nodes.map((x) => x[0]);
 	const values = nodes.map((d) => parseFloat(localizeDept(d, [dataKey])));
 	const labels = nodes.map((d) => dataParser(d, ["schoolname", "deptname"]));
 
@@ -799,7 +812,7 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 					formatter: function (value) {
 						return value.toFixed(2); // 小數點兩位
 					},
-					font: { size: 10},
+					font: { size: 10 },
 				},
 				title: { display: true, text: chartName },
 			},
@@ -809,7 +822,9 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 	const labels = nodes.map((d) => dataParser(d[0], ["schoolname", "deptname"]));
 	const rValues = nodes.map((d) => d[1]);
-	const avgValues = nodes.map((d) => parseFloat(localizeDept(d[0], [avgKey])).toFixed(2));
+	const avgValues = nodes.map((d) =>
+		parseFloat(localizeDept(d[0], [avgKey])).toFixed(2)
+	);
 
 	safeDraw(containerId, {
 		type: "line",
@@ -869,37 +884,36 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 		},
 	});
 }
-function iLB(){
-		
-	const containers = document.querySelectorAll('.image-container.medium')
-	const lightbox = document.getElementById('lightbox')
-	const LBcontent = document.getElementById('lightbox-content')
-	const MC = document.querySelector('.main-content')
+function iLB() {
+	const containers = document.querySelectorAll(".image-container.medium");
+	const lightbox = document.getElementById("lightbox");
+	const LBcontent = document.getElementById("lightbox-content");
+	const MC = document.querySelector(".main-content");
 	let ACTcontainer = null;
 	let nS = null;
-	const dummy =document.createElement('div');
-	containers.forEach(container => {
-		container.addEventListener('click',function(){
-			if(!ACTcontainer){
-			dummy.className='placeholder-image';
-			dummy.style.width=container.offsetWidth+'px';
-			dummy.style.height=container.offsetHeight+'px';
-			dummy.style.display='inline-block'
-			ACTcontainer = container;
-			nS = container.nextSibling;
-			container.parentNode.insertBefore(dummy,nS);
-			lightbox.style.display='block';
-			LBcontent.innerHTML='';
-			LBcontent.appendChild(container);
+	const dummy = document.createElement("div");
+	containers.forEach((container) => {
+		container.addEventListener("click", function () {
+			if (!ACTcontainer) {
+				dummy.className = "placeholder-image";
+				dummy.style.width = container.offsetWidth + "px";
+				dummy.style.height = container.offsetHeight + "px";
+				dummy.style.display = "inline-block";
+				ACTcontainer = container;
+				nS = container.nextSibling;
+				container.parentNode.insertBefore(dummy, nS);
+				lightbox.style.display = "block";
+				LBcontent.innerHTML = "";
+				LBcontent.appendChild(container);
 			}
-		})
-	})
-	lightbox.addEventListener('click',function(e){
-		if(e.target == lightbox){
-			dummy.style.display='none';
-			MC.insertBefore(ACTcontainer,dummy);
-			lightbox.style.display='none';
-			LBcontent.innerHTML='';
+		});
+	});
+	lightbox.addEventListener("click", function (e) {
+		if (e.target == lightbox) {
+			dummy.style.display = "none";
+			MC.insertBefore(ACTcontainer, dummy);
+			lightbox.style.display = "none";
+			LBcontent.innerHTML = "";
 			ACTcontainer = null;
 		}
 	});
