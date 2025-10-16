@@ -12,6 +12,7 @@ let universityData = {};
 let originalUniversityData = {};
 let currentYear = "111"; // 預設年份
 let currentDisplayMode = "group"; // 預設顯示模式：系組
+let currentSumMode = "getSummaryData"; //- #NOTE : "getRelationData" or "getSummaryData"
 Chart.register(ChartDataLabels);
 
 // DOM 元素
@@ -337,7 +338,6 @@ function initializeModeButtons() {
 async function initializeData() {
 	try {
 		universityData = await loadSchoolData(currentYear);
-		// originalUniversityData = JSON.parse(JSON.stringify(universityData)); // 深拷貝
 
 		if (Object.keys(universityData).length === 0) {
 			universityList.innerHTML =
@@ -447,6 +447,35 @@ function updateSelectedSchool(schoolElement) {
 		fullText: `${school.name} (${currentYear}年)`,
 	};
 
+	fetch(`api/${currentSumMode}`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(selectedUniversity),
+	})
+		.then((res) => res.json())
+		.then((json) => {
+			console.log(json);
+			const { nodes, edges } = json;
+			drawLineChart("chart-line-1", nodes, "錄取率", "admissonrate");
+			drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
+			drawLineChart(
+				"chart-line-3",
+				nodes,
+				"甄選名額流去登分比例",
+				"shiftratio"
+			);
+			drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
+			renderNetwork(nodes, edges);
+			iLB();
+			return json;
+		})
+		.catch((err) => {
+			console.error(err);
+			return err;
+		});
+
 	console.log("選中學校:", selectedUniversity);
 }
 
@@ -498,53 +527,60 @@ function updateSelectedDepartment(departmentElement) {
 			year: currentYear,
 			universityCode: schoolCode,
 			universityName: school.name,
-			departmentCode: deptCode,
+			departmentCodes: [deptCode],
 			departmentName: dept.name,
 			categories: categories,
 			mode: "group",
 			fullText: `${school.name} - ${dept.name} (${currentYear}年)`,
 		};
 
-		// 載入並繪製 network
-		fetch(`api/getRelationData?year=${currentYear}&id=${deptCode}`)
-			.then((res) => res.json())
-			.then((res) => {
-				const { nodes, edges } = res;
-
-				drawLineChart("chart-line-1", nodes, "錄取率", "admissonrate");
-				drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
-				drawLineChart(
-					"chart-line-3",
-					nodes,
-					"甄選名額流去登分比例",
-					"shiftratio"
-				);
-				drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
-				renderNetwork(nodes, edges);
-				iLB();
-			})
-			.catch((err) => {
-				console.error(`載入關係圖失敗:`, err);
-			});
-
 		selectedTitle.textContent = `${school.name} - ${dept.name}`;
 		selectedInfo.innerHTML = `
             學校代碼: ${schoolCode} | 科系代碼: ${deptCode} | 年份: ${currentYear}<br>
             模式: 系組模式 | 招生群別: ${categories.join(", ")}
         `;
-
+				
 		//- Get AI analyze
-
 		fetch(`/api/getSchoolAnalyze?year=${currentYear}&schoolID=${deptCode}`)
 			.then(async (res) => {
 				let { chat } = await res.json();
 				// AITextBox.innerHTML = md.render(chat);
-				AITextBox.innerHTML = showdownCt.makeHtml(chat);;
+				AITextBox.innerHTML = showdownCt.makeHtml(chat);
 			})
 			.catch((e) => {
 				AITextBox.textContent = `${e.message}`;
 			});
 	}
+
+	// 載入並繪製 network
+	fetch(`api/${currentSumMode}`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(departmentInfo),
+	})
+		.then((res) => res.json())
+		.then((json) => {
+			const { nodes, edges } = json;
+
+			drawLineChart("chart-line-1", nodes, "錄取率", "admissonrate");
+			drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
+			drawLineChart(
+				"chart-line-3",
+				nodes,
+				"甄選名額流去登分比例",
+				"shiftratio"
+			);
+			drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
+			renderNetwork(nodes, edges);
+			iLB();
+			return json;
+		})
+		.catch((err) => {
+			console.error(err);
+			return err;
+		});
 
 	selectedInfo.classList.remove("no-selection");
 	selectedDepartment = departmentInfo;

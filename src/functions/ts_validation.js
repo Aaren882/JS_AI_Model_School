@@ -50,17 +50,10 @@ class Ts {
 					校系代碼 AS id
 				FROM public."Data_${year}"
 			`,
-			rowMode: "array"
+			rowMode: "array",
 		};
-		let _query = await dbClient.query(query);
 
-		//- NODES
-		/* const nodes = new Map();
-		_query.rows.forEach((team) => {
-			//- split schools into teams
-			if (team["id"] !== null) nodes.set(team["id"].toString(), new Rating());
-		}); */
-
+		const _query = await dbClient.query(query);
 		return _query.rows;
 	}
 	static async getEdges(year = 111) {
@@ -126,7 +119,49 @@ class Ts {
 		});
 
 		return {
-			nodes: [...ratings].map(x => {
+			nodes: [...ratings].map((x) => {
+				const [node, rating] = x;
+				return [node, Ts.R_score(rating).toFixed(2)];
+			}),
+			edges: edges,
+		};
+	}
+
+	/* 
+		#TODO - Improve time complexity
+		Rate all the matches with input targets (EDGES)
+		targets : []
+	*/
+	static async targets_matching_Ratings(year = 111, targets = []) {
+		
+		const matches = [];
+		const tasks = targets.map((target) =>
+			Ts.target_matching(year, target, false)
+		);
+		
+		for await (const task of tasks) {
+			task.forEach((element) => 
+				matches.push([...element])
+			);
+		}
+
+		let edges = matches.map((x) => x.slice(0, 2));
+		let uniqueIDs = [...new Set(edges.flat())];
+
+		const ratings = new Map(uniqueIDs.map((x) => [x, new Rating()]));
+
+		matches.forEach((x) => {
+			const [winner, loser, isDraw] = x;
+			const [newP1, newP2] = Ts.rate(
+				[ratings.get(winner), ratings.get(loser)],
+				isDraw
+			);
+			ratings.set(winner, newP1);
+			ratings.set(loser, newP2);
+		});
+
+		return {
+			nodes: [...ratings].map((x) => {
 				const [node, rating] = x;
 				return [node, Ts.R_score(rating).toFixed(2)];
 			}),
@@ -165,6 +200,9 @@ class Ts {
 
 export function Ts_matching_Ratings(year = 111, query_target) {
 	return Ts.target_matching_Ratings(year, query_target);
+};
+export function Ts_matching_Ratings_Array(year = 111, query_target) {
+	return Ts.targets_matching_Ratings(year, query_target);
 };
 
 export async function Ts_data(year = 111) {

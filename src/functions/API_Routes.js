@@ -1,10 +1,14 @@
 import Express from "express";
+import bodyParser from "body-parser";
 import { QueryChat } from "./ollamaQuery.js";
 import dbClient from "./dataBase_Client.js";
 import { dataBase_methods } from "./dataBase_Client.js";
 import { Ts_matching_Ratings } from "./ts_validation.js";
 
 const API_router = Express.Router();
+
+API_router.use(bodyParser.json());
+API_router.use(bodyParser.urlencoded({ extended: false }));
 
 /*
   year = the target year
@@ -24,7 +28,7 @@ API_router.get("/getAllSchool", async (req, res) => {
 		res.status(200).json(_res);
 	} catch (err) {
 		res.status(404).send("404 Error no data.");
-		console.error(err.message);
+		console.error(err);
 	}
 });
 
@@ -122,13 +126,9 @@ API_router.get("/getSchoolAnalyze", async (req, res) => {
   year = the target year
   id = school ID
 */
-API_router.get("/getRelationData", async (req, res) => {
+API_router.post("/getRelationData", async (req, res) => {
 	try {
-		let { year, id } = req.query;
-		let year_Int = parseInt(year);
-
-		const relations = await Ts_matching_Ratings(year_Int, id);
-
+		const relations = await dataBase_methods.getRelationData(req.body);
 		res.status(200).json(relations);
 	} catch (err) {
 		res.status(404).send("404 Error no data.");
@@ -137,15 +137,18 @@ API_router.get("/getRelationData", async (req, res) => {
 });
 
 /*
-  #TODO - Not working yet (maybe not needed)
-  id = school id
+  year = the target year
+  id = school ID
 */
-API_router.get("/getSchoolDeparts", (req, res) => {
-	let { id } = req.query;
-	let id_Int = parseInt(id);
-	console.log(id);
-	res.status(200);
-	res.send(id_Int);
+API_router.post("/getSummaryData", async (req, res) => {
+	try {
+		const summary = await dataBase_methods.getSummaryData(req.body);
+		res.status(200).json(summary);
+	} catch (err) {
+		res.status(404).send("404 Error no data.");
+		console.error(err.message);
+	}
 });
+
 
 export default API_router;
