@@ -1,11 +1,9 @@
 import Express from "express";
-import showdown from "showdown";
 import { QueryChat } from "./ollamaQuery.js";
 import dbClient from "./dataBase_Client.js";
 import { dataBase_methods } from "./dataBase_Client.js";
 import { Ts_matching_Ratings } from "./ts_validation.js";
 
-const showdownCt = new showdown.Converter(); //- MD convertor
 const API_router = Express.Router();
 
 /*
@@ -111,8 +109,8 @@ API_router.get("/getSchoolAnalyze", async (req, res) => {
 		const data = q.rows.map((x) => {
 			return { [x["校系代碼"]]: x };
 		})[0];
+
 		let chat_Res = await QueryChat(int_Year, data, target, "");
-		// chat_Res = showdownCt.makeHtml(chat_Res.message.content);
 		res.status(200).json({ chat: chat_Res.message.content });
 	} catch (err) {
 		res.status(404).send("404 Error no data.");
