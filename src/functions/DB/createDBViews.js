@@ -23,7 +23,7 @@ async function createDataView(year) {
       (
         CASE
         WHEN "一般生招生名額" = 0 THEN 
-          -1.000
+          0
         ELSE
           (
             (
@@ -38,7 +38,7 @@ async function createDataView(year) {
       (
         CASE
         WHEN "一般生招生名額" = 0 THEN 
-          -1.000
+          0
         ELSE
           cast ("一般生名額空缺" AS DOUBLE PRECISION) / 
           cast ("一般生招生名額" AS DOUBLE PRECISION)
