@@ -119,7 +119,7 @@ export class dataBase_methods {
 			console.error(err.message);
 		}
 	}
-	//- Get all the match data in pairs.
+	//- Get all the match data in pairs. (#NOTE : it's without draw !!!)
 	static async getAllMatches(year_Int = -1) {
 		const query = {
 			text: `
