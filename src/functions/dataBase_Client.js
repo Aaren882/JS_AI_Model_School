@@ -37,8 +37,10 @@ if (!dbClient) {
 		});
 	}
 }
+export default dbClient;
 
-function getPrompt(year = "0", post = "") {
+//- #NOTE :  DEPRECATED
+/* function getPrompt(year = "0", post = "") {
 	return `
     SELECT 
       "校系代碼" as id,
@@ -47,9 +49,6 @@ function getPrompt(year = "0", post = "") {
     FROM public."Data_${year}"
     where "正備取有效性" != 0 ${post}
   `;
-}
-
-export default dbClient;
 export class SchoolDB_Client {
 	SchoolQueue = new SchoolQueue();
 
@@ -75,7 +74,7 @@ export class SchoolDB_Client {
 				});
 		});
 	}
-}
+} */
 
 export class dataBase_methods {
 	static async initDatabase(year = 111) {
@@ -155,7 +154,7 @@ export class dataBase_methods {
 	}
 
 	static async getSummaryData(bodyData) {
-		const { year = "", mode, departmentCodes, universityCode } = bodyData;
+		const { year = "", mode } = bodyData;
 		const year_Int = parseInt(year);
 
 		try {
@@ -184,7 +183,7 @@ export class dataBase_methods {
 					return res_Sum.rows;
 
 				default:
-					return Ts_matching_Ratings_Array(year_Int, departmentCodes);
+					return res_nodes;
 			}
 		} catch (err) {
 			console.error(err);
