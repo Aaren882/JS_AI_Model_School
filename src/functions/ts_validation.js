@@ -67,14 +67,12 @@ class Ts {
 		const query = {
 			text: `
 				SELECT 
-					ARRAY[
-						一,
-						二,
-						三,
-						四,
-						五,
-						六
-					] AS competitives
+					一,
+					二,
+					三,
+					四,
+					五,
+					六
 				FROM public.admission_${year}
 			`,
 			rowMode: "array",
@@ -85,7 +83,6 @@ class Ts {
 		let _query = await dbClient.query(query);
 
 		_query.rows.forEach((match) => {
-			match = match[0];
 			for (let i = 0; i < match.length; i++) {
 				const isDraw = i > 0;
 				const last_elem = match[i];
