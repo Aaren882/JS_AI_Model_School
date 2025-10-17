@@ -211,13 +211,32 @@ export class dataBase_methods {
 			console.error(err);
 		}
 	}
-
-	//- 登記分發資料
-	static async getAllSchool_Distr(year_Int = -1) {
-		const query = `
-      SELECT *
-      FROM public."QUERY_Distr_${year_Int}"
-    `;
+	
+	//- Get all the match data in pairs.
+	static async getAllMatches(year_Int = -1) {
+		const query = {
+			text: `
+				SELECT 
+					CAST (WINNER AS text),
+					CAST (LOSER AS text)
+				FROM
+				(
+					SELECT 
+						一 AS WINNER,
+						unnest(array[
+							二,
+							三,
+							四,
+							五,
+							六
+						]) AS LOSER
+					FROM public.admission_${year_Int}
+				)
+				WHERE 
+					LOSER IS NOT NULL
+			`,
+			rowMode: "array",
+		};
 
 		try {
 			let res = await dbClient.query(query);
