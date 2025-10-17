@@ -96,6 +96,8 @@ export class dataBase_methods {
 			let res = await dbClient.query(query);
 
 			if (res.rows[0] != 1) await Promise.all([QueryViews(year)]);
+
+			if (res.rows[0] != 1) await Promise.all([QueryViews(year)]);
 		} catch (err) {
 			console.error(err);
 		} finally {
