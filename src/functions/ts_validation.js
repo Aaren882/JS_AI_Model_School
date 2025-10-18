@@ -1,4 +1,5 @@
 import dbClient from "./dataBase_Client.js";
+import { dataBase_methods } from "./dataBase_Client.js";
 import { rate_1vs1, Rating } from "ts-trueskill";
 
 const _cache = new Map();
@@ -46,17 +47,17 @@ class Ts {
 		let query = {
 			text: `
 				SELECT 
-					校系代碼 AS id
+					CAST(校系代碼 AS text) AS id
 				FROM public."Data_${year}"
 			`,
 			rowMode: "array",
 		};
 
 		const _query = await dbClient.query(query);
-		return _query.rows;
+		return _query.rows.map(x => x[0]);
 	}
-	static async getEdges(year = 111) {
-		const query = {
+	static getEdges(year = 111) {
+		/* const query = {
 			text: `
 				SELECT 
 					一,
@@ -90,9 +91,9 @@ class Ts {
 					edges.push(cur_edge);
 				}
 			}
-		});
-
-		return edges;
+		}); */
+		
+		return dataBase_methods.getAllMatches_FullDetail(year);
 	}
 
 	//- Rate all the matches (EDGES)
@@ -208,12 +209,7 @@ export async function Ts_data(year = 111) {
 	try {
 		let [node_ids, edges] = await Ts.createQuery(year);
 
-		const nodes = new Map();
-		node_ids.forEach((team) => {
-			//- split schools into teams
-			if (team[0] !== null)
-				nodes.set(team[0].toString(), new Rating());
-		});
+		const nodes = new Map(node_ids.map((x) => [x, new Rating()]));
 
 		edges.forEach((x) => {
 			const [winner, loser, isDraw] = x;
