@@ -96,6 +96,7 @@ export class dataBase_methods {
 			let res = await dbClient.query(query);
 
 			if (res.rows[0] != 1) await Promise.all([QueryViews(year)]);
+
 		} catch (err) {
 			console.error(err);
 		} finally {
@@ -140,10 +141,7 @@ export class dataBase_methods {
 						rowMode: "array",
 					};
 					let res_nodes = await dbClient.query(query);
-					return Ts_matching_Ratings_Array(
-						year_Int,
-						res_nodes.rows.flat()
-					);
+					return Ts_matching_Ratings_Array(year_Int, res_nodes.rows.flat());
 
 				default:
 					return Ts_matching_Ratings_Array(year_Int, departmentCodes);
@@ -196,7 +194,7 @@ export class dataBase_methods {
 							AVG("avg") AS "avg"
 						FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}"
 						WHERE "deptcode" in (
-							\'${res_nodes["nodes"].map(x => x[0]).join("','")}\'
+							\'${res_nodes["nodes"].map((x) => x[0]).join("','")}\'
 						)
 						GROUP BY 
 							"deptcode"
@@ -212,12 +210,118 @@ export class dataBase_methods {
 		}
 	}
 
-	//- 登記分發資料
-	static async getAllSchool_Distr(year_Int = -1) {
-		const query = `
-      SELECT *
-      FROM public."QUERY_Distr_${year_Int}"
-    `;
+	//- Get all the match data in pairs. (#NOTE : it's without draw !!!)
+	static async getAllMatches(year_Int = -1) {
+		const query = {
+			text: `
+				SELECT 
+					CAST (WINNER AS text),
+					CAST (LOSER AS text)
+				FROM
+				(
+					SELECT 
+						一 AS WINNER,
+						unnest(array[
+							二,
+							三,
+							四,
+							五,
+							六
+						]) AS LOSER
+					FROM public.admission_${year_Int}
+				)
+				WHERE 
+					LOSER IS NOT NULL
+			`,
+			rowMode: "array",
+		};
+
+		try {
+			let res = await dbClient.query(query);
+			return res.rows;
+		} catch (err) {
+			console.error(err.message);
+		}
+	}
+	//- This only outputs draw arrays (it should have less)
+	static async getAllMatches_Draws(year_Int = -1) {
+		const query = {
+			text: `
+				SELECT 
+					CAST (WINNER AS text),
+					CAST (LOSER AS text)
+				FROM
+				(
+					SELECT 
+						二 AS WINNER,
+						unnest(array[
+							三,
+							四,
+							五,
+							六
+						]) AS LOSER
+					FROM public.admission_${year_Int}
+				)
+				WHERE 
+					LOSER IS NOT NULL
+			`,
+			rowMode: "array",
+		};
+
+		try {
+			let res = await dbClient.query(query);
+			return res.rows;
+		} catch (err) {
+			console.error(err.message);
+		}
+	}
+	//- This only outputs arrays of "[winner<STRING>, loser<STRING>, isDraw<BOOL>]"
+	static async getAllMatches_FullDetail(year_Int = -1) {
+		const query = {
+			text: `
+			(
+				SELECT 
+					CAST (WINNER AS text),
+					CAST (LOSER AS text),
+					false AS isDraw
+				FROM
+				(
+					SELECT 
+						一 AS WINNER,
+						unnest(array[
+							二,
+							三,
+							四,
+							五,
+							六
+						]) AS LOSER
+					FROM public.admission_${year_Int}
+				)
+				WHERE 
+					LOSER IS NOT NULL
+			) UNION (
+				SELECT 
+					CAST (WINNER AS text),
+					CAST (LOSER AS text),
+					true AS isDraw
+				FROM
+				(
+					SELECT 
+						二 AS WINNER,
+						unnest(array[
+							三,
+							四,
+							五,
+							六
+						]) AS LOSER
+					FROM public.admission_${year_Int}
+				)
+				WHERE 
+					LOSER IS NOT NULL
+			)
+			`,
+			rowMode: "array",
+		};
 
 		try {
 			let res = await dbClient.query(query);
