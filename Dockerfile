@@ -20,7 +20,8 @@ ENV NODE_ENV=production \
 		DB_IP=DB_IP \
 		DB_PW=password \
 		DB_PORT=5432 \
-		PORT=9000
+		PORT=9000 \
+		VERSION_TAG=${GIT_VERSION_TAG}
 
 VOLUME /var/lib/university_analyze
 WORKDIR /usr/src/app

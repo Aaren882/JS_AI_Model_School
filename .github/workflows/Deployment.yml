@@ -59,27 +59,27 @@ jobs:
           secrets: |
             GIT_AUTH_TOKEN=${{ secrets.GITHUB_TOKEN  }}
       # SSH Remote the SERVER for deployment
-      - 
-        name: Checkout
-        uses: actions/checkout@v5.0.0
-      - 
-        name: Setup Tailscale
-        uses: tailscale/github-action@v3
-        with:
-          hostname: Github-actions
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
-      - 
-        name: Deploy to Staging server
-        uses: kostya-ten/ssh-server-deploy@v4
-        with:
-          scp_source: 'compose.yaml'
-          scp_target: ${{secrets.REMOTE_DIRECTORY}}
-          host: ${{secrets.SSH_HOST}}
-          username: ${{secrets.SSH_USER}}
-          private_key: ${{secrets.SSH_PRIVATE_KEY}}
-          before_script: |
-            docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml pull
-          after_script: |
-            docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml up -d
+      # - 
+      #   name: Checkout
+      #   uses: actions/checkout@v5.0.0
+      # - 
+      #   name: Setup Tailscale
+      #   uses: tailscale/github-action@v3
+      #   with:
+      #     hostname: Github-actions
+      #     oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+      #     oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+      #     tags: tag:ci
+      # - 
+      #   name: Deploy to Staging server
+      #   uses: kostya-ten/ssh-server-deploy@v4
+      #   with:
+      #     scp_source: 'compose.yaml'
+      #     scp_target: ${{secrets.REMOTE_DIRECTORY}}
+      #     host: ${{secrets.SSH_HOST}}
+      #     username: ${{secrets.SSH_USER}}
+      #     private_key: ${{secrets.SSH_PRIVATE_KEY}}
+      #     before_script: |
+      #       docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml pull
+      #     after_script: |
+      #       docker compose -f ${{secrets.REMOTE_DIRECTORY}}/compose.yaml up -d

@@ -5,6 +5,9 @@ import path from "path";
 import API_router from "./functions/API_Routes.js";
 import { dataBase_methods } from "./functions/dataBase_Client.js";
 
+//- Print VERSION_TAG
+console.log(`- Product Version:\x1b[33m ${process.env.VERSION_TAG}\x1b[0m`);
+
 //- Initialization
 	//- Check table existence
 		await Promise.all([111, 112, 113].map((x) => dataBase_methods.initDatabase(x)));
