@@ -96,7 +96,7 @@ API_router.get("/getSchoolAnalyze", async (req, res) => {
 								)
 							END
 						) AS 甄選一般生錄取率,
-						"Data_${int_Year}"."r_score"
+						"Data_${int_Year}"."r_score" AS "年度 R-Score"
 						
 				FROM Public."Distr_${int_Year}"
 				RIGHT JOIN Public."Data_${int_Year}" ON 
