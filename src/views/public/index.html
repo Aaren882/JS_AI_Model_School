@@ -36,6 +36,7 @@
                     <button class="mode-button" data-mode="school">學校</button>
                     <button class="mode-button" data-mode="department">系所</button>
                     <button class="mode-button active" data-mode="group">系組</button>
+                    <button class="mode-button" data-mode="compare">變化比較</button>
                 </div>
             </div>
 
@@ -52,6 +53,24 @@
             <div class="selected-university">
                 <h3 id="selected-title">尚未選擇學校</h3>
                 <p id="selected-info" class="no-selection">請從左側列表選擇學校或科系</p>
+            </div>
+
+            <div class="change-section" id="changeT">
+                <div class="input-label">分析結果(變化)</div>
+                <div class="input-area">
+                    <table id ="resultTable">
+                        <thead>
+                            <tr>
+                                <th>代號</th>
+                                <th id="TYear">年R值</th>
+                                <th id="Pyear">年R值</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- 第一行圖片 -->

@@ -121,8 +121,8 @@ function simplifyCategory(category) {
 function generateUniversityList(data, displayMode) {
 	let html = "";
 
-	if (displayMode === "school") {
-		// 學校模式：只顯示學校，不可展開
+	if (displayMode === "school" || displayMode === "compare") {
+		// 學校模式：只顯示學校，不可展開     新增變化比較模式
 		Object.keys(data).forEach((schoolCode) => {
 			const school = data[schoolCode];
 			html += `
@@ -364,7 +364,7 @@ async function initializeData() {
 
 // 初始化事件監聽器
 function initializeEventListeners() {
-	if (currentDisplayMode === "school") {
+	if (currentDisplayMode === "school" || currentDisplayMode === "compare") {
 		// 學校模式：直接點擊學校項目
 		document.querySelectorAll(".university-item").forEach((item) => {
 			item.addEventListener("click", function () {
@@ -380,6 +380,9 @@ function initializeEventListeners() {
 				updateSelectedSchool(this);
 			});
 		});
+		if(currentDisplayMode === "compare"){
+			changePage();
+		}
 	} else {
 		// 系所和系組模式：學校標題點擊事件
 		document.querySelectorAll(".university-header").forEach((header) => {
@@ -433,10 +436,18 @@ function updateSelectedSchool(schoolElement) {
 	const school = universityData[schoolCode];
 
 	selectedTitle.textContent = school.name;
+	if(currentDisplayMode === "school"){
 	selectedInfo.innerHTML = `
         學校代碼: ${schoolCode} | 年份: ${currentYear}<br>
         模式: 學校模式
-    `;
+    `;}
+	else{
+		selectedInfo.innerHTML = `
+        學校代碼: ${schoolCode} | 年份: ${currentYear}<br>
+        模式: 比較模式
+	`
+	CompareChange();
+	;};
 	selectedInfo.classList.remove("no-selection");
 
 	selectedUniversity = {
@@ -944,4 +955,65 @@ function iLB() {
 			ACTcontainer = null;
 		}
 	});
+}
+async function loadCdata(y){
+	const res = await fetch(`api/getRelationData?year=${y}&id=101001`);
+	const node1 = await res.json();
+	console.log(node1);
+	return node1.nodes;
+}
+function changePage(){
+	document.getElementById("TYear").textContent=`${currentYear}年R值`
+	document.getElementById("Pyear").textContent=`${currentYear-1}年R值`
+	const ChangeT = document.getElementById('changeT')
+	ChangeT.style.display="table-column";
+}
+async function CompareChange(){
+	const node1 = await loadCdata(currentYear)
+	const tableBody = document.querySelector('#resultTable tbody');
+	tableBody.innerHTML=''
+	console.log(node1);
+	const lup1={};
+	node1.forEach(item => lup1[item[0]] = item[1]);
+	const lup2={};
+	if(currentYear!=='111'){
+		const node2 = await loadCdata(currentYear-1)
+		node2.forEach(item => lup2[item[0]] = item[1]);
+	}
+	const allK = await Array.from(new Set([...Object.keys(lup1), ...Object.keys(lup2)]));
+	console.log(allK,lup1)
+	const MA = allK.map(key =>[
+		key,
+		lup1[key] !== undefined ? lup1[key] : "---",
+		lup2[key] !== undefined ? lup2[key] : "---"
+	]);
+	console.log(MA)
+	MA.forEach(row =>{
+		const tr = document.createElement("tr");
+		row.forEach(item =>{
+			let td = document.createElement("td");
+			td.textContent = item;
+			tr.appendChild(td);
+		})
+		tableBody.appendChild(tr);
+	})
+	//node1.forEach(item =>{
+		/* const row = document.createElement("tr");
+		const IDc = document.createElement("td");
+		const R1 = document.createElement("td");
+		const R2 = document.createElement("td");
+		IDc.textContent=item[0];
+		row.appendChild(IDc);
+		row.appendChild(R1);
+		if(currentYear==='111'){
+			if(node2Array.includes(item)){
+				R2.textContent=node2R[0];
+			}else{R2.textContent='---'}
+		}else{
+			R2.textContent='---'
+		}
+		row.appendChild(R2);
+		tableBody.appendChild(row); */
+	//})
+	//console.log(tableBody);
 }
