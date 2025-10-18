@@ -97,7 +97,6 @@ export class dataBase_methods {
 
 			if (res.rows[0] != 1) await Promise.all([QueryViews(year)]);
 
-			if (res.rows[0] != 1) await Promise.all([QueryViews(year)]);
 		} catch (err) {
 			console.error(err);
 		} finally {
@@ -210,7 +209,7 @@ export class dataBase_methods {
 			console.error(err);
 		}
 	}
-	
+
 	//- Get all the match data in pairs. (#NOTE : it's without draw !!!)
 	static async getAllMatches(year_Int = -1) {
 		const query = {
