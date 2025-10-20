@@ -688,6 +688,9 @@ table,th,td{
     border-collapse: collapse;
     padding: 8px;
 }
+table{
+    margin: 20px auto;
+}
 
 #lightbox {
     display: none;
