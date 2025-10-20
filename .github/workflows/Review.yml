@@ -26,7 +26,7 @@ jobs:
       
       - 
         name: Run Ollama Code Review
-        uses: ./
+        uses: ray5273/ollama-pr-review-action@v1.0.0
         with:
           OLLAMA_API_URL: ${{ secrets.OLLAMA_ADDRESS }} # Local Ollama server
           MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -36,4 +36,3 @@ jobs:
           RESPONSE_LANGUAGE: '台灣繁體中文zh-TW'
           MODEL: ${{ secrets.OLLAMA_MODEL }}
           TRANSLATION_MODEL: 'gemma3'
-          exclude: "yarn.lock,dist/**,*.sql,Dockerfile"
