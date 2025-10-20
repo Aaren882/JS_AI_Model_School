@@ -4,8 +4,7 @@ on:
   pull_request:
     types:
       - opened
-# permissions: 
-#   contents: read
+permissions: write-all
 
 jobs:
   code_review:
