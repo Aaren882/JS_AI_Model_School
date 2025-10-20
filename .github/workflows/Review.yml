@@ -13,7 +13,7 @@ jobs:
     steps:
       - 
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5.0.0
 
       - 
         name: Setup Tailscale
@@ -24,10 +24,15 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
       
-      - name: Code Review
-        uses: tomisacat/ai_code_review@main
+      - 
+        name: Run Ollama Code Review
+        uses: ./
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OLLAMA_ADDRESS: ${{ secrets.OLLAMA_ADDRESS }}
-          LLM_MODEL: ${{ secrets.OLLAMA_MODEL }}
-          exclude: "yarn.lock,dist/**,*.sql"
+          OLLAMA_API_URL: ${{ secrets.OLLAMA_ADDRESS }} # Local Ollama server
+          MY_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RESPONSE_LANGUAGE: '台灣繁體中文zh-TW'
+          MODEL: ${{ secrets.OLLAMA_MODEL }}
+          TRANSLATION_MODEL: 'gemma3'
