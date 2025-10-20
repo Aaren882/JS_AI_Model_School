@@ -1,0 +1,33 @@
+name: Code Review with ollama
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+# permissions: 
+#   contents: read
+
+jobs:
+  code_review:
+    runs-on: ubuntu-latest
+    steps:
+      - 
+        name: Checkout
+        uses: actions/checkout@v5.0.0
+
+      - 
+        name: Setup Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          hostname: Github-actions
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+      
+      - name: Code Review
+        uses: tomisacat/ai_code_review@main
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OLLAMA_ADDRESS: ${{ secrets.OLLAMA_ADDRESS }}
+          LLM_MODEL: ${{ secrets.OLLAMA_MODEL }}
+          exclude: "yarn.lock,dist/**,*.sql"
