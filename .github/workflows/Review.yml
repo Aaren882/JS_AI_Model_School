@@ -36,3 +36,4 @@ jobs:
           RESPONSE_LANGUAGE: '台灣繁體中文zh-TW'
           MODEL: ${{ secrets.OLLAMA_MODEL }}
           TRANSLATION_MODEL: 'gemma3'
+          exclude: "yarn.lock,dist/**,*.sql,Dockerfile"
