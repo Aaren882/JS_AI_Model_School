@@ -684,12 +684,30 @@ canvas{
 
 
 table,th,td{
-    border: 1px solid black;
-    border-collapse: collapse;
-    padding: 8px;
+    border: 1.5px solid rgb(255, 255, 255);
+    border-collapse: separate;
+    padding: 10px;
+    font-size: 100%;
+    font-family: sans-serif;
 }
 table{
-    margin: 20px auto;
+    margin: 0% auto;
+    height: 100%;
+    width: 100%;
+}
+th,td{
+    border-bottom: groove;
+}
+tbody tr:hover{
+    background-color: #c5c5c5;
+    transform: translateY(-4px);
+    box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+tr:nth-child(even){background-color: #f2f2f2;}
+thead {
+    font-size: 105%;
 }
 
 #lightbox {

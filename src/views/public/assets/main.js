@@ -229,8 +229,12 @@ function switchDisplayMode(mode) {
 		return;
 	}
 	
+	selectedTitle.textContent = "尚未選擇學校";
+	selectedInfo.textContent = "請從左側列表選擇學校或科系";
+	CompareJson=null;
 	currentDisplayMode = mode;
 	SelectItem = null;
+	
 	// 更新按鈕狀態
 	modeButtons.forEach((btn) => {
 		btn.classList.remove("active");
@@ -279,7 +283,6 @@ async function switchYear(year) {
 		currentYear = year;
 		universityData = newData;
 		SecYear.value = currentYear;
-		console.log('這是CJS檔',CompareJson);
 		// originalUniversityData = JSON.parse(JSON.stringify(newData));
 		if(CompareJson){
 			switch(currentDisplayMode){
@@ -402,7 +405,8 @@ function initializeYearSelects() {
 	});
 	SecYear.addEventListener("change", function(){
 		SecYear.value = this.value;
-		Compare(CompareJson)
+		switchYear(SecYear.value);
+		
 	});
 }
 
@@ -504,7 +508,6 @@ function initializeEventListeners() {
 function updateSelectedSchool(schoolElement) {
 	const schoolCode = schoolElement.getAttribute("data-code");
 	const school = universityData[schoolCode];
-	console.log("這是測試中的",currentDisplayMode)
 	selectedTitle.textContent = school.name;
 	if(currentDisplayMode === "school"){
 	selectedInfo.innerHTML = `
@@ -572,7 +575,6 @@ function updateSelectedDepartment(departmentElement) {
 	const school = universityData[schoolCode];
 
 	let departmentInfo = {};
-	console.log("這是測試中的",currentDisplayMode)
 	if (currentDisplayMode === "department") {
 		// 系所模式
 		const deptCodes = departmentElement.getAttribute("data-codes").split("|");
@@ -1080,6 +1082,7 @@ async function Compare(CurrentJson){
 	const lup1=lookups[0];
 	const lup2=lookups[1];
 	const allK = await Array.from(new Set([...Object.keys(lup1), ...Object.keys(lup2)]));
+	
 	const MA = Array.from(allK).sort((a,b)=>a-b).map(key=>{
 		return[
 			key,
