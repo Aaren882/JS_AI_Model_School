@@ -341,7 +341,7 @@ function CompareChange(){
 			btn.classList.add("active");
 			ChangeT.style.display="table-column";
 			AllContainer.forEach(item => {item.classList.add('hide')});
-			if(CompareJson){Compare(CompareJson);console.log("讀取",CompareJson)};
+			if(CompareJson){Compare(CompareJson);};
 		}else{
 			if(SelectItem){
 				switch(currentDisplayMode){
@@ -531,7 +531,6 @@ function updateSelectedSchool(schoolElement) {
 	};
 	if(!CompareJson) CompareJson = selectedUniversity;
 	if(Cstatus){
-		console.log('比較模式 , 學校選取：',selectedUniversity);
 		Compare(selectedUniversity);
 	}
 	else{fetch(`api/${currentSumMode}`, {
@@ -543,7 +542,6 @@ function updateSelectedSchool(schoolElement) {
 	})
 		.then((res) => res.json())
 		.then((json) => {
-			console.log(json);
 			const { nodes, edges } = json;
 			drawLineChart("chart-line-1", nodes, "錄取率", "admissonrate");
 			drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
@@ -638,9 +636,8 @@ function updateSelectedDepartment(departmentElement) {
 			});
 	}
 	if(!CompareJson) CompareJson = departmentInfo;
-	console.log(CompareJson)
+	
 	if(Cstatus){
-		console.log("科系組模式",departmentInfo);
 		Compare(departmentInfo);
 	}
 	// 載入並繪製 network
@@ -1075,9 +1072,12 @@ async function Compare(CurrentJson){
 		return obj;
 	});
 	const nameLU={};
-	originalUniversityData.forEach(item=>{
-		if(currentDisplayMode==="school")nameLU[item.schoolcode]=item.schoolname;
-		else{nameLU[item.deptcode]=`${item.schoolname} ${item.deptname}`}
+	[node1,node2].forEach(item=>{
+		item.forEach(i=>{
+		if(currentDisplayMode==="school")nameLU[i.schoolcode]=i.schoolname;
+		else{nameLU[i.deptcode]=`${i.schoolname} ${i.deptname}`
+	}})
+		
 	})
 	const lup1=lookups[0];
 	const lup2=lookups[1];
@@ -1091,13 +1091,7 @@ async function Compare(CurrentJson){
 			nameLU[key] || "---"
 		]; 
 	});
-	/* const allS = new Set();
-	lookups.forEach(obj => Object.keys(obj).forEach(k => allS.add(k)));
-	const MA = Array.from(allS).sort((a,b)=>a-b).map(s =>{
-		const row=[s];
-		lookups.forEach(obj=>row.push(obj[s]!==undefined ? obj[s]: "---"));
-		return row;
-	}); */
+
 
 	MA.forEach(row =>{
 		const tr = document.createElement("tr");
@@ -1117,23 +1111,5 @@ async function Compare(CurrentJson){
 		})
 		tableBody.appendChild(tr);
 	})
-	//node1.forEach(item =>{
-		/* const row = document.createElement("tr");
-		const IDc = document.createElement("td");
-		const R1 = document.createElement("td");
-		const R2 = document.createElement("td");
-		IDc.textContent=item[0];
-		row.appendChild(IDc);
-		row.appendChild(R1);
-		if(currentYear==='111'){
-			if(node2Array.includes(item)){
-				R2.textContent=node2R[0];
-			}else{R2.textContent='---'}
-		}else{
-			R2.textContent='---'
-		}
-		row.appendChild(R2);
-		tableBody.appendChild(row); */
-	//})
-	//console.log(tableBody);
+	
 }
