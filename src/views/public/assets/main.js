@@ -907,7 +907,7 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 	const labels = nodes.map((d) => dataParser(d, ["schoolname", "deptname"]));
 
 	safeDraw(containerId, {
-		type: "line",
+		type: "bar",
 		data: {
 			labels: labels,
 			datasets: [
@@ -915,6 +915,7 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 					label: chartName,
 					data: values,
 					borderColor: "#3e95cd",
+					backgroundColor:"#3e95cd",
 					fill: false,
 					tension: 0.4,
 				},
@@ -933,6 +934,7 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 				},
 				title: { display: true, text: chartName },
 			},
+			scales:{y:{min:0,suggestedMax:1.2}},
 		},
 	});
 }
@@ -944,13 +946,14 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 	);
 
 	safeDraw(containerId, {
-		type: "line",
+		type: "bar",
 		data: {
 			labels: labels,
 			datasets: [
 				{
 					label: rKey,
 					data: rValues,
+					backgroundColor:'#3e95cd',
 					borderColor: "#3e95cd",
 					yAxisID: "y1",
 					fill: false,
@@ -959,6 +962,7 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 				{
 					label: avgKey,
 					data: avgValues,
+					backgroundColor:'#ff9800',
 					borderColor: "#ff9800",
 					yAxisID: "y2",
 					fill: false,
