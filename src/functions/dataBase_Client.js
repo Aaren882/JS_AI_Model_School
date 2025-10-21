@@ -164,6 +164,7 @@ export class dataBase_methods {
 					query_Summary = `
 						SELECT 
 							schoolcode,
+							schoolname,
 							AVG("posvalid") AS "posvalid",
 							AVG("admissionvalidity") AS "admissionvalidity",
 							AVG("admissonrate") AS "admissonrate",
@@ -175,7 +176,8 @@ export class dataBase_methods {
 							\'${res_nodes["nodes"].map((x) => x[0].slice(0, 3)).join("','")}\'
 						)
 						GROUP BY 
-							"schoolcode"
+							"schoolcode",
+							"schoolname"
 					`;
 
 					res_Sum = await dbClient.query(query_Summary);
@@ -186,6 +188,8 @@ export class dataBase_methods {
 					query_Summary = `
 						SELECT 
 							deptcode,
+							deptname,
+							schoolname,
 							AVG("posvalid") AS "posvalid",
 							AVG("admissionvalidity") AS "admissionvalidity",
 							AVG("admissonrate") AS "admissonrate",
@@ -197,7 +201,9 @@ export class dataBase_methods {
 							\'${res_nodes["nodes"].map((x) => x[0]).join("','")}\'
 						)
 						GROUP BY 
-							"deptcode"
+							"deptcode",
+							"deptname",
+							"schoolname"
 					`;
 					res_Sum = await dbClient.query(query_Summary);
 					return res_Sum.rows;
