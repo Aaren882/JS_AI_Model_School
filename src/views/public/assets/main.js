@@ -2,7 +2,7 @@ import showdown from "https://cdn.jsdelivr.net/npm/showdown@2.1.0/+esm";
 showdown.setFlavor("github");
 
 const showdownCt = new showdown.Converter({
-	tables: true
+	tables: true,
 }); //- MD convertor
 
 // 全局變量
@@ -28,8 +28,6 @@ const changeButtons = document.querySelectorAll(".change-button");
 const AITextBox = document.getElementById("AI-input-area");
 const FirstYear = document.getElementById("SelectYear");
 const SecYear = document.getElementById("CompareYear");
-
-
 
 // 從CSV文件讀取資料
 async function loadSchoolData(year = "111") {
@@ -228,13 +226,13 @@ function switchDisplayMode(mode) {
 	if (currentDisplayMode === mode) {
 		return;
 	}
-	
+
 	selectedTitle.textContent = "尚未選擇學校";
 	selectedInfo.textContent = "請從左側列表選擇學校或科系";
-	CompareJson=null;
+	CompareJson = null;
 	currentDisplayMode = mode;
 	SelectItem = null;
-	
+
 	// 更新按鈕狀態
 	modeButtons.forEach((btn) => {
 		btn.classList.remove("active");
@@ -284,18 +282,19 @@ async function switchYear(year) {
 		universityData = newData;
 		SecYear.value = currentYear;
 		// originalUniversityData = JSON.parse(JSON.stringify(newData));
-		if(CompareJson){
-			switch(currentDisplayMode){
-				case 'school':{
+		if (CompareJson) {
+			switch (currentDisplayMode) {
+				case "school": {
 					updateSelectedSchool(SelectItem);
-					break
+					break;
 				}
-				case 'group':
-				case 'department':{
+				case "group":
+				case "department": {
 					updateSelectedDepartment(SelectItem);
-					break
+					break;
 				}
-		}}
+			}
+		}
 		// 更新年份按鈕狀態
 		yearButtons.forEach((btn) => {
 			btn.classList.remove("active");
@@ -328,37 +327,42 @@ async function switchYear(year) {
 	}
 }
 
-function CompareChange(){
-	const ChangeT = document.getElementById('changeT');
-	const AllContainer = document.querySelectorAll('.image-container.medium, .image-container.large, .input-section');
+function CompareChange() {
+	const ChangeT = document.getElementById("changeT");
+	const AllContainer = document.querySelectorAll(
+		".image-container.medium, .image-container.large, .input-section"
+	);
 	Cstatus = !Cstatus;
 	changeButtons.forEach((btn) => {
 		btn.classList.remove("active");
-		ChangeT.style.display="none";
+		ChangeT.style.display = "none";
 		//AllContainer.forEach(item => {item.classList.toggle('hide'),console.log(item)});
-		AllContainer.forEach(item => item.classList.remove('hide'));
+		AllContainer.forEach((item) => item.classList.remove("hide"));
 		if (Cstatus) {
 			btn.classList.add("active");
-			ChangeT.style.display="table-column";
-			AllContainer.forEach(item => {item.classList.add('hide')});
-			if(CompareJson){Compare(CompareJson);};
-		}else{
-			if(SelectItem){
-				switch(currentDisplayMode){
-					case 'school':{
+			ChangeT.style.display = "table-column";
+			AllContainer.forEach((item) => {
+				item.classList.add("hide");
+			});
+			if (CompareJson) {
+				Compare(CompareJson);
+			}
+		} else {
+			if (SelectItem) {
+				switch (currentDisplayMode) {
+					case "school": {
 						updateSelectedSchool(SelectItem);
-						break
+						break;
 					}
-					case 'group':
-					case 'department':{
+					case "group":
+					case "department": {
 						updateSelectedDepartment(SelectItem);
-						break
+						break;
 					}
 				}
 			}
 		}
 	});
-	
 }
 
 // 重置選擇狀態
@@ -393,20 +397,19 @@ function initializeModeButtons() {
 function initializeChangeButtons() {
 	changeButtons.forEach((button) => {
 		button.addEventListener("click", function () {
-			CompareChange()
+			CompareChange();
 		});
 	});
 }
 
 function initializeYearSelects() {
-	FirstYear.addEventListener("change", function(){
+	FirstYear.addEventListener("change", function () {
 		FirstYear.value = this.value;
 		Compare(CompareJson);
 	});
-	SecYear.addEventListener("change", function(){
+	SecYear.addEventListener("change", function () {
 		SecYear.value = this.value;
 		switchYear(SecYear.value);
-		
 	});
 }
 
@@ -456,7 +459,6 @@ function initializeEventListeners() {
 				updateSelectedSchool(this);
 			});
 		});
-
 	} else {
 		// 系所和系組模式：學校標題點擊事件
 		document.querySelectorAll(".university-header").forEach((header) => {
@@ -490,7 +492,7 @@ function initializeEventListeners() {
 
 				// 添加選中狀態
 				this.classList.add("selected");
-				SelectItem=this;
+				SelectItem = this;
 				// 更新選中信息
 				updateSelectedDepartment(this);
 			});
@@ -509,17 +511,17 @@ function updateSelectedSchool(schoolElement) {
 	const schoolCode = schoolElement.getAttribute("data-code");
 	const school = universityData[schoolCode];
 	selectedTitle.textContent = school.name;
-	if(currentDisplayMode === "school"){
-	selectedInfo.innerHTML = `
+	if (currentDisplayMode === "school") {
+		selectedInfo.innerHTML = `
         學校代碼: ${schoolCode} | 年份: ${currentYear}<br>
         模式: 學校模式
-    `;}
-	else{
+    `;
+	} else {
 		selectedInfo.innerHTML = `
         學校代碼: ${schoolCode} | 年份: ${currentYear}<br>
         模式: 比較模式
-	`
-	;};
+	`;
+	}
 	selectedInfo.classList.remove("no-selection");
 
 	selectedUniversity = {
@@ -529,37 +531,38 @@ function updateSelectedSchool(schoolElement) {
 		mode: "school",
 		fullText: `${school.name} (${currentYear}年)`,
 	};
-	if(!CompareJson) CompareJson = selectedUniversity;
-	if(Cstatus){
+	if (!CompareJson) CompareJson = selectedUniversity;
+	if (Cstatus) {
 		Compare(selectedUniversity);
-	}
-	else{fetch(`api/${currentSumMode}`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify(selectedUniversity),
-	})
-		.then((res) => res.json())
-		.then((json) => {
-			const { nodes, edges } = json;
-			drawLineChart("chart-line-1", nodes, "錄取率", "admissonrate");
-			drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
-			drawLineChart(
-				"chart-line-3",
-				nodes,
-				"甄選名額流去登分比例",
-				"shiftratio"
-			);
-			drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
-			renderNetwork(nodes, edges);
-			iLB();
-			return json;
+	} else {
+		fetch(`api/${currentSumMode}`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(selectedUniversity),
 		})
-		.catch((err) => {
-			console.error(err);
-			return err;
-		});}
+			.then((res) => res.json())
+			.then((json) => {
+				const { nodes, edges } = json;
+				drawLineChart("chart-line-1", nodes, "錄取率", "admissonrate");
+				drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
+				drawLineChart(
+					"chart-line-3",
+					nodes,
+					"甄選名額流去登分比例",
+					"shiftratio"
+				);
+				drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
+				renderNetwork(nodes, edges);
+				iLB();
+				return json;
+			})
+			.catch((err) => {
+				console.error(err);
+				return err;
+			});
+	}
 
 	console.log("選中學校:", selectedUniversity);
 }
@@ -623,7 +626,7 @@ function updateSelectedDepartment(departmentElement) {
             學校代碼: ${schoolCode} | 科系代碼: ${deptCode} | 年份: ${currentYear}<br>
             模式: 系組模式 | 招生群別: ${categories.join(", ")}
         `;
-				
+
 		//- Get AI analyze
 		fetch(`/api/getSchoolAnalyze?year=${currentYear}&schoolID=${deptCode}`)
 			.then(async (res) => {
@@ -635,40 +638,42 @@ function updateSelectedDepartment(departmentElement) {
 				AITextBox.textContent = `${e.message}`;
 			});
 	}
-	if(!CompareJson) CompareJson = departmentInfo;
-	
-	if(Cstatus){
+	if (!CompareJson) CompareJson = departmentInfo;
+
+	if (Cstatus) {
 		Compare(departmentInfo);
 	}
 	// 載入並繪製 network
-	else{fetch(`api/${currentSumMode}`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify(departmentInfo),
-	})
-		.then((res) => res.json())
-		.then((json) => {
-			const { nodes, edges } = json;
-
-			drawLineChart("chart-line-1", nodes, "錄取率", "admissonrate");
-			drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
-			drawLineChart(
-				"chart-line-3",
-				nodes,
-				"甄選名額流去登分比例",
-				"shiftratio"
-			);
-			drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
-			renderNetwork(nodes, edges);
-			iLB();
-			return json;
+	else {
+		fetch(`api/${currentSumMode}`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(departmentInfo),
 		})
-		.catch((err) => {
-			console.error(err);
-			return err;
-		});}
+			.then((res) => res.json())
+			.then((json) => {
+				const { nodes, edges } = json;
+
+				drawLineChart("chart-line-1", nodes, "錄取率", "admissonrate");
+				drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
+				drawLineChart(
+					"chart-line-3",
+					nodes,
+					"甄選名額流去登分比例",
+					"shiftratio"
+				);
+				drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
+				renderNetwork(nodes, edges);
+				iLB();
+				return json;
+			})
+			.catch((err) => {
+				console.error(err);
+				return err;
+			});
+	}
 
 	selectedInfo.classList.remove("no-selection");
 	selectedDepartment = departmentInfo;
@@ -958,7 +963,7 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 				{
 					label: rKey,
 					data: rValues,
-					backgroundColor:'#3e95cd',
+					backgroundColor: "#3e95cd",
 					borderColor: "#3e95cd",
 					yAxisID: "y1",
 					fill: false,
@@ -967,7 +972,7 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 				{
 					label: avgKey,
 					data: avgValues,
-					backgroundColor:'#ff9800',
+					backgroundColor: "#ff9800",
 					borderColor: "#ff9800",
 					yAxisID: "y2",
 					fill: false,
@@ -1045,8 +1050,8 @@ function iLB() {
 		}
 	});
 }
-async function loadCdata(DATA,yearData){
-	DATA.year=yearData
+async function loadCdata(DATA, yearData) {
+	DATA.year = yearData;
 	const res = await fetch(`api/getSummaryData`, {
 		method: "POST",
 		headers: {
@@ -1055,71 +1060,79 @@ async function loadCdata(DATA,yearData){
 		body: JSON.stringify(DATA),
 	});
 	const node1 = await res.json();
-	console.log('資料擷取完畢');
+	console.log("資料擷取完畢");
 	return node1;
 }
 
-async function Compare(CurrentJson){
-	if (!CurrentJson){console.log('沒東西');return};
-	const tableBody = document.querySelector('#resultTable tbody');
-	tableBody.innerHTML='等待中'
+async function Compare(CurrentJson) {
+	if (!CurrentJson) {
+		console.log("沒東西");
+		return;
+	}
+	const tableBody = document.querySelector("#resultTable tbody");
+	tableBody.innerHTML = "等待中";
 	CompareJson = CurrentJson;
 	const SelY1 = FirstYear.value;
 	const SelY2 = SecYear.value;
 
-	const [node1,node2] = await Promise.all([
-		loadCdata(CompareJson,SelY1),
-		loadCdata(CompareJson,SelY2)
+	const [node1, node2] = await Promise.all([
+		loadCdata(CompareJson, SelY1),
+		loadCdata(CompareJson, SelY2),
 	]);
-	const arrays=[node1,node2];
-	tableBody.innerHTML=''
-	const lookups = arrays.map(item => {
-		const obj ={};
-		item.forEach(i =>{
-			if(currentDisplayMode==="school")obj[i.schoolcode] = i.r_score;
-			else{obj[i.deptcode] = i.r_score;}
+	const arrays = [node1, node2];
+	tableBody.innerHTML = "";
+	const lookups = arrays.map((item) => {
+		const obj = {};
+		item.forEach((i) => {
+			if (currentDisplayMode === "school") obj[i.schoolcode] = i.r_score;
+			else {
+				obj[i.deptcode] = i.r_score;
+			}
 		});
 		return obj;
 	});
-	const nameLU={};
-	[node1,node2].forEach(item=>{
-		item.forEach(i=>{
-		if(currentDisplayMode==="school")nameLU[i.schoolcode]=i.schoolname;
-		else{nameLU[i.deptcode]=`${i.schoolname} ${i.deptname}`
-	}})
-		
-	})
-	const lup1=lookups[0];
-	const lup2=lookups[1];
-	const allK = await Array.from(new Set([...Object.keys(lup1), ...Object.keys(lup2)]));
-	
-	const MA = Array.from(allK).sort((a,b)=>a-b).map(key=>{
-		return[
-			key,
-			lup1[key] !== undefined ? lup1[key] : "---",
-			lup2[key] !== undefined ? lup2[key] : "---",
-			nameLU[key] || "---"
-		]; 
+	const nameLU = {};
+	[node1, node2].forEach((item) => {
+		item.forEach((i) => {
+			if (currentDisplayMode === "school") nameLU[i.schoolcode] = i.schoolname;
+			else {
+				nameLU[i.deptcode] = `${i.schoolname} ${i.deptname}`;
+			}
+		});
 	});
+	const lup1 = lookups[0];
+	const lup2 = lookups[1];
+	const allK = await Array.from(
+		new Set([...Object.keys(lup1), ...Object.keys(lup2)])
+	);
 
+	const MA = Array.from(allK)
+		.sort((a, b) => a - b)
+		.map((key) => {
+			return [
+				key,
+				lup1[key] !== undefined ? lup1[key] : "---",
+				lup2[key] !== undefined ? lup2[key] : "---",
+				nameLU[key] || "---",
+			];
+		});
 
-	MA.forEach(row =>{
+	MA.forEach((row) => {
 		const tr = document.createElement("tr");
-		row.forEach((item,index) =>{
+		row.forEach((item, index) => {
 			const td = document.createElement("td");
 			td.textContent = item;
-			if(index===3){
-				if(lup1[row[0]] !==undefined && lup2[row[0]] !==undefined){
-					td.style.backgroundColor = '#ffffffff'
-				}else if (lup2[row[0]] === undefined){
-					td.style.backgroundColor = '#f66262ff'
-				}else{
-					td.style.backgroundColor = '#74e874ff'
+			if (index === 3) {
+				if (lup1[row[0]] !== undefined && lup2[row[0]] !== undefined) {
+					td.style.backgroundColor = "#ffffffff";
+				} else if (lup2[row[0]] === undefined) {
+					td.style.backgroundColor = "#f66262ff";
+				} else {
+					td.style.backgroundColor = "#74e874ff";
 				}
 			}
 			tr.appendChild(td);
-		})
+		});
 		tableBody.appendChild(tr);
-	})
-	
+	});
 }
