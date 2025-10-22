@@ -915,7 +915,10 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 					label: chartName,
 					data: values,
 					borderColor: "#3e95cd",
-					backgroundColor:"#3e95cd",
+					backgroundColor: (ctx) => {
+						const v = ctx.raw;
+						return v < 0 ? "#ff6384" : "#36a2eb";
+					},
 					fill: false,
 					tension: 0.4,
 				},
@@ -934,7 +937,9 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 				},
 				title: { display: true, text: chartName },
 			},
-			scales:{y:{min:0,suggestedMax:1.2}},
+			scales:{
+				x:{ticks:{autoskip:false,maxRotation:90,minRotation:90,fontSize:8}},
+				y:{suggestedMin:0,suggestedMax:1.2}},
 		},
 	});
 }
@@ -984,6 +989,7 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 				},
 			},
 			scales: {
+				x:{ticks:{autoskip:false,maxRotation:90,minRotation:90,fontSize:8}},
 				y1: {
 					type: "linear",
 					position: "left",

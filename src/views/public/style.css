@@ -866,6 +866,7 @@ thead {
     
     .image-container.medium {
         height: 160px;
+        overflow-x: scroll;
     }
     
     .image-container.small {
@@ -932,6 +933,7 @@ thead {
     
     .image-container.medium {
         height: 140px;
+        overflow-x: scroll;
     }
     
     .image-container.small {
