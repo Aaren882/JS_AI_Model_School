@@ -142,8 +142,21 @@ API_router.post("/getRelationData", async (req, res) => {
 */
 API_router.post("/getSummaryData", async (req, res) => {
 	try {
-		const summary = await dataBase_methods.getSummaryData(req.body);
-		res.status(200).json(summary);
+		const { body } = req;
+		const { SC = '000000', TG } = await dataBase_methods.getDepartCodeInTargetYear(body);
+		const [sc_summary, tg_summary] = await Promise.all([
+			dataBase_methods.getSummaryData({ ...body, departmentCodes: [SC] }),
+			dataBase_methods.getSummaryData({
+				...body,
+				year: body.year_TG,
+				departmentCodes: [TG],
+			}),
+		]);
+		
+		res.status(200).json({
+			source: sc_summary,
+			target: tg_summary,
+		});
 	} catch (err) {
 		res.status(404).send("404 Error no data.");
 		console.error(err.message);
