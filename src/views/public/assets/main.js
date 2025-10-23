@@ -280,8 +280,8 @@ async function switchYear(year) {
 		// 更新全局變量
 		currentYear = year;
 		universityData = newData;
-		SecYear.value = currentYear;
-		// originalUniversityData = JSON.parse(JSON.stringify(newData));
+		FirstYear.value = currentYear;
+
 		if (CompareJson) {
 			switch (currentDisplayMode) {
 				case "school": {
@@ -405,11 +405,11 @@ function initializeChangeButtons() {
 function initializeYearSelects() {
 	FirstYear.addEventListener("change", function () {
 		FirstYear.value = this.value;
-		Compare(CompareJson);
+		switchYear(FirstYear.value);
 	});
 	SecYear.addEventListener("change", function () {
 		SecYear.value = this.value;
-		switchYear(SecYear.value);
+		Compare(CompareJson);
 	});
 }
 
@@ -1074,7 +1074,6 @@ function iLB() {
 	});
 }
 async function loadCdata(DATA, yearData) {
-	DATA.year = yearData;
 	const res = await fetch(`api/getSummaryData`, {
 		method: "POST",
 		headers: {
@@ -1082,9 +1081,8 @@ async function loadCdata(DATA, yearData) {
 		},
 		body: JSON.stringify(DATA),
 	});
-	const node1 = await res.json();
 	console.log("資料擷取完畢");
-	return node1;
+	return res.json();
 }
 
 async function Compare(CurrentJson) {
@@ -1095,43 +1093,46 @@ async function Compare(CurrentJson) {
 	const tableBody = document.querySelector("#resultTable tbody");
 	tableBody.innerHTML = "等待中";
 
-	CompareJson = CurrentJson;
-	const SelY1 = FirstYear.value;
-	const SelY2 = SecYear.value;
+	//- Set up compare JSON
+	CompareJson = {
+		...CurrentJson,
+		year: FirstYear.value,
+		year_TG: SecYear.value,
+	};
 
-	const [node1, node2] = await Promise.all([
-		loadCdata(CompareJson, SelY1),
-		loadCdata(CompareJson, SelY2),
-	]);
-	
-	const arrays = [node1, node2];
+	//- Request Data
+	const compareData = await loadCdata(CompareJson);
+
 	tableBody.innerHTML = "";
-	
+	const arrays = [compareData.source, compareData.target];
 	const lookups = arrays.map((item) => {
-		const obj = {};
-		item.forEach((i) => {
-			if (currentDisplayMode === "school") obj[i.schoolcode] = i.r_score;
-			else {
-				obj[i.deptcode] = i.r_score;
-			}
+		let obj = {};
+		item.forEach(({ schoolcode, schoolname, deptname, category, r_score }) => {
+			//- #NOTE - Checking "school" mode
+			if (currentDisplayMode === "school") return (obj[schoolcode] = r_score);
+
+			const key = `${schoolcode}/${deptname}/${category}`;
+			obj[key] = r_score;
 		});
 		return obj;
 	});
 
-	const nameLU = {};
+	const Labels = {}
 	arrays.forEach((item) => {
-		item.forEach((i) => {
-			const { schoolcode, schoolname, deptname, category } = i;
-			
-			if (currentDisplayMode === "school") nameLU[schoolcode] = schoolname;
-			else {
-				nameLU[
-					`${schoolname} ${deptname} ${category}`
-				] = `${schoolname} ${deptname} [${category}${simplifyCategory(
+		return item.forEach(
+			({ schoolcode, schoolname, deptname, category }) => {
+
+				//- Labels for "school" mode
+				if (currentDisplayMode === "school")
+					return (Labels[schoolcode] = schoolname);
+
+				//- Detail labels by default
+				const key = `${schoolcode}/${deptname}/${category}`;
+				Labels[key] = `${schoolname} ${deptname} [${category}${simplifyCategory(
 					category
 				)}]`;
 			}
-		});
+		);
 	});
 
 	const [lup1, lup2] = lookups;
@@ -1143,27 +1144,51 @@ async function Compare(CurrentJson) {
 		.sort((a, b) => a - b)
 		.map((key) => {
 			return [
+				Labels[key] || "---",
+				lup1[key] !== undefined ? lup1[key].toFixed(2) : "---",
+				lup2[key] !== undefined ? lup2[key].toFixed(2) : "---",
 				key,
-				lup1[key] !== undefined ? lup1[key] : "---",
-				lup2[key] !== undefined ? lup2[key] : "---",
-				nameLU[key] || "---",
 			];
 		});
 
+	//- Add Rows
+	const { universityCode, categories, departmentName } = selectedDepartment;
 	MA.forEach((row) => {
 		const tr = document.createElement("tr");
+		const key = row[3];
+		const [schoolCode, departName, category] = key.split("/");
+
+		//- Hight light the selected
+		if (
+			universityCode === schoolCode &&
+			categories.includes(category) &&
+			departmentName === departName
+		) {
+			tr.style.backgroundColor = "#91f00b74";
+		}
+		
+		//- Add Values
 		row.forEach((item, index) => {
 			const td = document.createElement("td");
-			td.textContent = item;
+
 			if (index === 3) {
-				if (lup1[row[0]] !== undefined && lup2[row[0]] !== undefined) {
+				let text = "";
+				td.classList.add('compare-column'); //- Apply css
+				
+				// Check key exist
+				if (lup1[key] !== undefined && lup2[key] !== undefined) {
 					td.style.backgroundColor = "#ffffffff";
-				} else if (lup2[row[0]] === undefined) {
+				} else if (lup2[key] === undefined) {
+					text = "-";
 					td.style.backgroundColor = "#f66262ff";
 				} else {
+					text = "+";
 					td.style.backgroundColor = "#74e874ff";
 				}
-			}
+				td.textContent = text;
+			} else 
+				td.textContent = item;
+
 			tr.appendChild(td);
 		});
 		tableBody.appendChild(tr);

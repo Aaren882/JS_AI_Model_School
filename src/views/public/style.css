@@ -1012,3 +1012,8 @@ thead {
     position: relative;
     overflow: hidden;
 }
+
+.compare-column {
+    text-align: center;
+    font-size: 33px;
+}
