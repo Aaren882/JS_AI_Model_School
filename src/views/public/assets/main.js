@@ -1094,6 +1094,7 @@ async function Compare(CurrentJson) {
 	}
 	const tableBody = document.querySelector("#resultTable tbody");
 	tableBody.innerHTML = "等待中";
+
 	CompareJson = CurrentJson;
 	const SelY1 = FirstYear.value;
 	const SelY2 = SecYear.value;
@@ -1102,8 +1103,10 @@ async function Compare(CurrentJson) {
 		loadCdata(CompareJson, SelY1),
 		loadCdata(CompareJson, SelY2),
 	]);
+	
 	const arrays = [node1, node2];
 	tableBody.innerHTML = "";
+	
 	const lookups = arrays.map((item) => {
 		const obj = {};
 		item.forEach((i) => {
@@ -1114,17 +1117,24 @@ async function Compare(CurrentJson) {
 		});
 		return obj;
 	});
+
 	const nameLU = {};
-	[node1, node2].forEach((item) => {
+	arrays.forEach((item) => {
 		item.forEach((i) => {
-			if (currentDisplayMode === "school") nameLU[i.schoolcode] = i.schoolname;
+			const { schoolcode, schoolname, deptname, category } = i;
+			
+			if (currentDisplayMode === "school") nameLU[schoolcode] = schoolname;
 			else {
-				nameLU[i.deptcode] = `${i.schoolname} ${i.deptname}`;
+				nameLU[
+					`${schoolname} ${deptname} ${category}`
+				] = `${schoolname} ${deptname} [${category}${simplifyCategory(
+					category
+				)}]`;
 			}
 		});
 	});
-	const lup1 = lookups[0];
-	const lup2 = lookups[1];
+
+	const [lup1, lup2] = lookups;
 	const allK = await Array.from(
 		new Set([...Object.keys(lup1), ...Object.keys(lup2)])
 	);

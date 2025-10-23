@@ -189,6 +189,7 @@ export class dataBase_methods {
 						SELECT 
 							deptcode,
 							deptname,
+							category,
 							schoolname,
 							AVG("posvalid") AS "posvalid",
 							AVG("admissionvalidity") AS "admissionvalidity",
@@ -201,8 +202,8 @@ export class dataBase_methods {
 							\'${res_nodes["nodes"].map((x) => x[0]).join("','")}\'
 						)
 						GROUP BY 
-							"deptcode",
 							"deptname",
+							"category",
 							"schoolname"
 					`;
 					res_Sum = await dbClient.query(query_Summary);

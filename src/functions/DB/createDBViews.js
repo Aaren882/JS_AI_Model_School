@@ -7,58 +7,78 @@ async function createDataView(year) {
   const query = {
 		text: `
       SELECT 
-      (
-        SUBSTRING(
-          cast ("校系代碼" as varChar),1,3
-        )
-      ) AS schoolCode,
-      "Data_${year}".學校名稱 AS schoolName,
-      (
-        cast ("校系代碼" AS varChar)
-      ) AS deptCode,
-      "Data_${year}".系科組學程名稱 AS deptName,
-      "Data_${year}".群別代號 AS category,
-      "正取有效性" AS posValid,
-      "正備取有效性" AS admissionValidity,
-      (
-        CASE
-        WHEN "一般生招生名額" = 0 THEN 
-          0
-        ELSE
-          (
-            (
-              cast ("一般生招生名額" AS DOUBLE PRECISION) -
-              cast ("一般生名額空缺" AS DOUBLE PRECISION)
-            ) /
-          cast ("一般生招生名額" AS DOUBLE PRECISION)
-          )
-        END
-      ) AS AdmissonRate,
-      r_score AS r_score,
-      (
-        CASE
-        WHEN "一般生招生名額" = 0 THEN 
-          0
-        ELSE
-          cast ("一般生名額空缺" AS DOUBLE PRECISION) / 
-          cast ("一般生招生名額" AS DOUBLE PRECISION)
-        END
-      ) AS ShiftRatio,
-      COALESCE(
-        "Distr_${year}".錄取總分數 /
+        schoolCode,
+        schoolName,
+        deptCode,
+        deptName,
+        category,
+        AVG(posValid) AS posValid,
+        AVG(admissionValidity) AS admissionValidity,
+        AVG(AdmissonRate) AS AdmissonRate,
+        AVG(r_score) AS r_score,
+        AVG(ShiftRatio) AS ShiftRatio,
+        AVG("avg") AS "avg"
+      FROM (
+        SELECT 
         (
-          "Distr_${year}".國文 +
-          "Distr_${year}".英文 +
-          "Distr_${year}".數學 +
-          "Distr_${year}".專業一 +
-          "Distr_${year}".專業二
-        )
-      , 0) AS "avg"
-    FROM Public."Data_${year}"
-    INNER JOIN Public."Distr_${year}" ON 
-      "Data_${year}".學校名稱 LIKE "Distr_${year}".學校名稱 AND
-      POSITION("Data_${year}".系科組學程名稱 IN "Distr_${year}".系科組學程名稱) > 0 AND
-      "Distr_${year}".群別代號 LIKE "Distr_${year}".群別代號
+          SUBSTRING(
+            cast ("校系代碼" as varChar),1,3
+          )
+        ) AS schoolCode,
+        "Data_${year}".學校名稱 AS schoolName,
+        (
+          cast ("校系代碼" AS varChar)
+        ) AS deptCode,
+        "Data_${year}".系科組學程名稱 AS deptName,
+        "Data_${year}".群別代號 AS category,
+        "正取有效性" AS posValid,
+        "正備取有效性" AS admissionValidity,
+        (
+          CASE
+          WHEN "一般生招生名額" = 0 THEN 
+            0
+          ELSE
+            (
+              (
+                cast ("一般生招生名額" AS DOUBLE PRECISION) -
+                cast ("一般生名額空缺" AS DOUBLE PRECISION)
+              ) /
+            cast ("一般生招生名額" AS DOUBLE PRECISION)
+            )
+          END
+        ) AS AdmissonRate,
+        r_score AS r_score,
+        (
+          CASE
+          WHEN "一般生招生名額" = 0 THEN 
+            0
+          ELSE
+            cast ("一般生名額空缺" AS DOUBLE PRECISION) / 
+            cast ("一般生招生名額" AS DOUBLE PRECISION)
+          END
+        ) AS ShiftRatio,
+        COALESCE(
+          "Distr_${year}".錄取總分數 /
+          (
+            "Distr_${year}".國文 +
+            "Distr_${year}".英文 +
+            "Distr_${year}".數學 +
+            "Distr_${year}".專業一 +
+            "Distr_${year}".專業二
+          )
+        , 0) AS "avg"
+      FROM Public."Data_${year}"
+      INNER JOIN Public."Distr_${year}" ON 
+        "Data_${year}".學校名稱 LIKE "Distr_${year}".學校名稱 AND
+        POSITION("Data_${year}".系科組學程名稱 IN "Distr_${year}".系科組學程名稱) > 0 AND
+        "Distr_${year}".群別代號 LIKE "Distr_${year}".群別代號
+    )
+    GROUP BY 
+      schoolCode,
+      schoolName,
+      deptCode,
+      deptName,
+      category
     `,
 	};
   
