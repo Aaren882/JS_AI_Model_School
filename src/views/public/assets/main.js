@@ -106,18 +106,18 @@ function simplifyCategory(category) {
 		"07": "設計",
 		"08": "工管",
 		"09": "商管",
-		10: "衛護",
-		11: "食品",
-		12: "幼保",
-		13: "家政",
-		14: "農業",
-		15: "英語",
-		16: "日語",
-		17: "餐旅",
-		18: "海事",
-		19: "水產",
-		20: "影視",
-		21: "資管",
+		"10": "衛護",
+		"11": "食品",
+		"12": "幼保",
+		"13": "家政",
+		"14": "農業",
+		"15": "英語",
+		"16": "日語",
+		"17": "餐旅",
+		"18": "海事",
+		"19": "水產",
+		"20": "影視",
+		"21": "資管",
 	};
 	return mapping[category] || category;
 }
@@ -600,7 +600,9 @@ function updateSelectedDepartment(departmentElement) {
             學校代碼: ${schoolCode} | 科系代碼: ${deptCodes.join(
 			", "
 		)} | 年份: ${currentYear}<br>
-            模式: 系所模式 | 招生群別: ${categories.join(", ")}
+            模式: 系所模式 | 招生群別: [${categories
+							.map(simplifyCategory)
+							.join(", ")}]
         `;
 	} else {
 		// 系組模式
@@ -624,7 +626,9 @@ function updateSelectedDepartment(departmentElement) {
 		selectedTitle.textContent = `${school.name} - ${dept.name}`;
 		selectedInfo.innerHTML = `
             學校代碼: ${schoolCode} | 科系代碼: ${deptCode} | 年份: ${currentYear}<br>
-            模式: 系組模式 | 招生群別: ${categories.join(", ")}
+            模式: 系組模式 | 招生群別: ${categories
+							.map(category => `[${category}${simplifyCategory(category)}]`)
+							.join(", ")}
         `;
 
 		//- Get AI analyze
@@ -909,7 +913,13 @@ function safeDraw(containerId, chartConfig) {
 function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 	nodes = nodes.map((x) => x[0]);
 	const values = nodes.map((d) => parseFloat(localizeDept(d, [dataKey])));
-	const labels = nodes.map((d) => dataParser(d, ["schoolname", "deptname"]));
+	const labels = nodes.map((d) => { //- Formatting labels
+		const result = dataParser(d, ["schoolname", "deptname", "category"]);
+		const [, deptname, category] = result;
+		
+		result[1] = `${deptname} - [${category}${simplifyCategory(category)}]`;
+		return result.slice(0,2);
+	});
 
 	safeDraw(containerId, {
 		type: "bar",
@@ -949,7 +959,13 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 	});
 }
 function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
-	const labels = nodes.map((d) => dataParser(d[0], ["schoolname", "deptname"]));
+	const labels = nodes.map((d) => { //- Formatting labels
+		const result = dataParser(d[0], ["schoolname", "deptname", "category"]);
+		const [, deptname, category] = result;
+
+		result[1] = `${deptname} - [${category}${simplifyCategory(category)}]`;
+		return result.slice(0, 2);
+	});
 	const rValues = nodes.map((d) => d[1]);
 	const avgValues = nodes.map((d) =>
 		parseFloat(localizeDept(d[0], [avgKey])).toFixed(2)
@@ -961,7 +977,7 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 			labels: labels,
 			datasets: [
 				{
-					label: rKey,
+					label: `R-score`,
 					data: rValues,
 					backgroundColor: "#3e95cd",
 					borderColor: "#3e95cd",
@@ -970,7 +986,7 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 					tension: 0.4,
 				},
 				{
-					label: avgKey,
+					label: `平均分數`,
 					data: avgValues,
 					backgroundColor: "#ff9800",
 					borderColor: "#ff9800",
@@ -985,7 +1001,7 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 			plugins: {
 				title: {
 					display: true,
-					text: `${rKey} & ${avgKey}`,
+					text: `此比較範圍的 R-score - 該年度分發入學 平均分數`,
 				},
 				datalabels: {
 					color: "#000",
@@ -994,7 +1010,14 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 				},
 			},
 			scales: {
-				x:{ticks:{autoskip:false,maxRotation:90,minRotation:90,fontSize:8}},
+				x: {
+					ticks: {
+						autoskip: false,
+						maxRotation: 90,
+						minRotation: 90,
+						fontSize: 8,
+					},
+				},
 				y1: {
 					type: "linear",
 					position: "left",
