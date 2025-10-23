@@ -67,8 +67,8 @@ async function createDataView(year) {
             "Distr_${year}".專業二
           )
         , 0) AS "avg"
-      FROM Public."Data_${year}"
-      INNER JOIN Public."Distr_${year}" ON 
+      FROM Public."Distr_${year}"
+      RIGHT JOIN Public."Data_${year}" ON 
         "Data_${year}".學校名稱 LIKE "Distr_${year}".學校名稱 AND
         POSITION("Data_${year}".系科組學程名稱 IN "Distr_${year}".系科組學程名稱) > 0 AND
         "Distr_${year}".群別代號 LIKE "Distr_${year}".群別代號
