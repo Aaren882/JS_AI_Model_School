@@ -41,7 +41,13 @@ async function createDataView(year) {
             (
               (
                 cast ("一般生招生名額" AS DOUBLE PRECISION) -
-                cast ("一般生名額空缺" AS DOUBLE PRECISION)
+                LEAST(
+                  cast ("一般生招生名額" AS DOUBLE PRECISION),
+                  GREATEST(
+                    cast ("一般生名額空缺" AS DOUBLE PRECISION),
+                    0
+                  )
+                )
               ) /
             cast ("一般生招生名額" AS DOUBLE PRECISION)
             )
@@ -53,7 +59,10 @@ async function createDataView(year) {
           WHEN "一般生招生名額" = 0 THEN 
             0
           ELSE
-            cast ("一般生名額空缺" AS DOUBLE PRECISION) / 
+            GREATEST(
+              cast ("一般生名額空缺" AS DOUBLE PRECISION),
+              0
+            ) / 
             cast ("一般生招生名額" AS DOUBLE PRECISION)
           END
         ) AS ShiftRatio,
