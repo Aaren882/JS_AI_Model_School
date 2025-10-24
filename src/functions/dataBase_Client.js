@@ -83,8 +83,8 @@ export class dataBase_methods {
 			text: `
         SELECT 
           cast (COUNT (*) AS Integer)
-        FROM information_schema.views
-        WHERE table_name LIKE '${query_TableName}'
+        FROM pg_matviews
+        WHERE matviewname LIKE '${query_TableName}'
       `,
 			rowMode: "array",
 		};
@@ -96,7 +96,6 @@ export class dataBase_methods {
 			let res = await dbClient.query(query);
 
 			if (res.rows[0] != 1) await Promise.all([QueryViews(year)]);
-
 		} catch (err) {
 			console.error(err);
 		} finally {
@@ -151,17 +150,94 @@ export class dataBase_methods {
 		}
 	}
 
+	static async getDepartCodeInTargetYear(bodyData) {
+		const {
+			year = "",
+			year_TG,
+			mode,
+			departmentCodes,
+			universityCode,
+			universityName,
+		} = bodyData;
+
+		const year_Int = parseInt(year);
+		const year_TG_Int = parseInt(year_TG);
+		
+		let sc_query_Summary;
+		switch (mode) {
+			case "school":
+				sc_query_Summary = `
+				SELECT 
+					SC_TB.schoolcode AS SC,
+					TG_TB.schoolcode AS TG
+				FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}" SC_TB
+				JOIN
+				(
+					SELECT *
+					FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}"
+				) TG_TB
+				ON SC_TB.schoolname = TG_TB.schoolname
+				WHERE 
+					SC_TB.schoolcode = \'${universityCode}\' AND
+					SC_TB.schoolname = TG_TB.schoolname
+				GROUP BY 
+					SC_TB.schoolcode,
+					TG_TB.schoolcode
+				`;
+				break;
+			default:
+				sc_query_Summary = `
+				SELECT 
+					SC_TB.deptcode AS \"SC\",
+					TG_TB.deptcode AS \"TG\"
+				FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}" SC_TB
+				JOIN
+				(
+					SELECT *
+					FROM public."QUERY_${year_TG_Int}${process.env.QUERY_POSTFIX || ""}"
+				) TG_TB
+				ON SC_TB.schoolcode = TG_TB.schoolcode
+				WHERE 
+					SC_TB.deptcode IN (
+						\'${departmentCodes.join("','")}\'
+					) AND
+					SC_TB.deptname = TG_TB.deptname AND
+					SC_TB.category = TG_TB.category
+				`;
+				break;
+		}
+
+		try {
+			let res = await dbClient.query({text: sc_query_Summary, rowMode: 'array'});
+
+			//- Transform Data
+			const result = [[], []];
+			res.rows.forEach(([SC = "000000", TG]) => {
+				result[0] = [...result[0], SC];
+				result[1] = [...result[1], TG];
+			});
+			
+			return result;
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
 	static async getSummaryData(bodyData) {
-		const { year = "", mode, departmentCodes } = bodyData;
+		const {
+			year = "",
+			mode,
+		} = bodyData;
 		const year_Int = parseInt(year);
 
 		try {
-			let query_Summary, res_Sum;
+			let tg_query_Summary, res_Sum;
 			const res_nodes = await dataBase_methods.getRelationData(bodyData);
+
 			switch (mode) {
 				case "school":
 					//- Summarize Schools into average values
-					query_Summary = `
+					tg_query_Summary = `
 						SELECT 
 							schoolcode,
 							schoolname,
@@ -170,44 +246,41 @@ export class dataBase_methods {
 							AVG("admissonrate") AS "admissonrate",
 							AVG("r_score") AS "r_score",
 							AVG("shiftratio") AS "shiftratio",
-							AVG("avg") AS "avg"
+							AVG("avg") AS "AVG"
 						FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}"
 						WHERE "schoolcode" in (
 							\'${res_nodes["nodes"].map((x) => x[0].slice(0, 3)).join("','")}\'
 						)
-						GROUP BY 
-							"schoolcode",
-							"schoolname"
+						GROUP BY
+							schoolcode,
+							schoolname
 					`;
-
-					res_Sum = await dbClient.query(query_Summary);
-					return res_Sum.rows;
+					break;
 
 				default:
 					//- Summarize departments into average values
-					query_Summary = `
+					tg_query_Summary = `
 						SELECT 
 							deptcode,
 							deptname,
+							category,
+							schoolcode,
 							schoolname,
-							AVG("posvalid") AS "posvalid",
-							AVG("admissionvalidity") AS "admissionvalidity",
-							AVG("admissonrate") AS "admissonrate",
-							AVG("r_score") AS "r_score",
-							AVG("shiftratio") AS "shiftratio",
-							AVG("avg") AS "avg"
+							"posvalid",
+							"admissionvalidity",
+							"admissonrate",
+							"r_score",
+							"shiftratio",
+							"avg"
 						FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}"
 						WHERE "deptcode" in (
 							\'${res_nodes["nodes"].map((x) => x[0]).join("','")}\'
 						)
-						GROUP BY 
-							"deptcode",
-							"deptname",
-							"schoolname"
 					`;
-					res_Sum = await dbClient.query(query_Summary);
-					return res_Sum.rows;
+					break;
 			}
+			res_Sum = await dbClient.query(tg_query_Summary);
+			return res_Sum.rows;
 		} catch (err) {
 			console.error(err);
 		}

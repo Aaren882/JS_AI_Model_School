@@ -280,8 +280,8 @@ async function switchYear(year) {
 		// 更新全局變量
 		currentYear = year;
 		universityData = newData;
-		SecYear.value = currentYear;
-		// originalUniversityData = JSON.parse(JSON.stringify(newData));
+		FirstYear.value = currentYear;
+
 		if (CompareJson) {
 			switch (currentDisplayMode) {
 				case "school": {
@@ -405,11 +405,11 @@ function initializeChangeButtons() {
 function initializeYearSelects() {
 	FirstYear.addEventListener("change", function () {
 		FirstYear.value = this.value;
-		Compare(CompareJson);
+		switchYear(FirstYear.value);
 	});
 	SecYear.addEventListener("change", function () {
 		SecYear.value = this.value;
-		switchYear(SecYear.value);
+		Compare(CompareJson);
 	});
 }
 
@@ -1074,7 +1074,6 @@ function iLB() {
 	});
 }
 async function loadCdata(DATA, yearData) {
-	DATA.year = yearData;
 	const res = await fetch(`api/getSummaryData`, {
 		method: "POST",
 		headers: {
@@ -1082,9 +1081,8 @@ async function loadCdata(DATA, yearData) {
 		},
 		body: JSON.stringify(DATA),
 	});
-	const node1 = await res.json();
 	console.log("資料擷取完畢");
-	return node1;
+	return res.json();
 }
 
 async function Compare(CurrentJson) {
@@ -1119,14 +1117,23 @@ async function Compare(CurrentJson) {
 		});
 		return obj;
 	});
-	const nameLU = {};
-	[node1, node2].forEach((item) => {
-		item.forEach((i) => {
-			if (currentDisplayMode === "school") nameLU[i.schoolcode] = i.schoolname;
-			else {
-				nameLU[i.deptcode] = `${i.schoolname} ${i.deptname}`;
+
+	const Labels = {}
+	arrays.forEach((item) => {
+		return item.forEach(
+			({ schoolcode, schoolname, deptname, category }) => {
+
+				//- Labels for "school" mode
+				if (currentDisplayMode === "school")
+					return (Labels[schoolcode] = schoolname);
+
+				//- Detail labels by default
+				const key = `${schoolcode}/${deptname}/${category}`;
+				Labels[key] = `${schoolname} ${deptname} [${category}${simplifyCategory(
+					category
+				)}]`;
 			}
-		});
+		);
 	});
 
 	const [lup1, lup2] = lookups;
@@ -1138,10 +1145,10 @@ async function Compare(CurrentJson) {
 		.sort((a, b) => a - b)
 		.map((key) => {
 			return [
+				Labels[key] || "---",
+				lup1[key] !== undefined ? lup1[key].toFixed(2) : "---",
+				lup2[key] !== undefined ? lup2[key].toFixed(2) : "---",
 				key,
-				lup1[key] !== undefined ? lup1[key] : "---",
-				lup2[key] !== undefined ? lup2[key] : "---",
-				nameLU[key] || "---",
 			];
 		});
 
@@ -1168,7 +1175,7 @@ async function Compare(CurrentJson) {
 		//- Add Values
 		row.forEach((item, index) => {
 			const td = document.createElement("td");
-			td.textContent = item;
+
 			if (index === 3) {
 				let text = "";
 				td.classList.add("compare-column"); //- Apply css
@@ -1176,9 +1183,11 @@ async function Compare(CurrentJson) {
 				// Check key exist
 				if (lup1[key] !== undefined && lup2[key] !== undefined) {
 					td.style.backgroundColor = "#ffffffff";
-				} else if (lup2[row[0]] === undefined) {
+				} else if (lup2[key] === undefined) {
+					text = "-";
 					td.style.backgroundColor = "#f66262ff";
 				} else {
+					text = "+";
 					td.style.backgroundColor = "#74e874ff";
 				}
 				td.textContent = text;
