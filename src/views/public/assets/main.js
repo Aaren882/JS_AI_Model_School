@@ -905,7 +905,6 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 	nodes = nodes.map((x) => x[0]);
 	const values = nodes.map((d) => parseFloat(localizeDept(d, [dataKey])));
 	const labels = nodes.map((d) => dataParser(d, ["schoolname", "deptname"]));
-
 	safeDraw(containerId, {
 		type: "bar",
 		data: {
@@ -931,14 +930,20 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 					color: "#000",
 					align: "top",
 					formatter: function (value) {
-						return value.toFixed(2); // 小數點兩位
+						return `${value.toFixed(2)}`; // 小數點兩位
 					},
 					font: { size: 10 },
 				},
 				title: { display: true, text: chartName },
 			},
 			scales:{
-				x:{ticks:{autoskip:false,maxRotation:90,minRotation:90,fontSize:8}},
+				x:{ticks:{autoskip:false,fontSize:8,minRotation:0,maxRotation:0,
+					color:(ctx) => ctx.index === 0 ? 'red' : 'black',
+					callback: function(value,index,ticks) {
+					const words = String(this.getLabelForValue(value)).split('');
+					words.forEach(i =>{i===','?words[words.indexOf(i)]=' ':i});
+					return words;
+				}}},
 				y:{suggestedMin:0,suggestedMax:1.2}},
 		},
 	});
@@ -949,7 +954,11 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 	const avgValues = nodes.map((d) =>
 		parseFloat(localizeDept(d[0], [avgKey])).toFixed(2)
 	);
-
+	const ranks =[
+		CalcRanks(rValues),
+		CalcRanks(avgValues)
+	];
+	console.log('Ranks:',ranks);
 	safeDraw(containerId, {
 		type: "bar",
 		data: {
@@ -983,13 +992,27 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 					text: `${rKey} & ${avgKey}`,
 				},
 				datalabels: {
-					color: "#000",
+					color: (ctx) => {
+						const rank = ranks[ctx.datasetIndex][ctx.dataIndex];
+						return rank === 1 ? "gold" : rank === 2 ? "silver" : rank === 3 ? "#cd7f32" : "#000000";
+					},
 					align: "top",
-					font: { size: 10 },
+					anchor: "end",
+					formatter: function (value, ctx) {return `（${ranks[ctx.datasetIndex][ctx.dataIndex]}）\n${value}`;},
+					font: (ctx) => { 
+						const rank = ranks[ctx.datasetIndex][ctx.dataIndex];
+						return { size: rank <= 3 ? 12 : 10, weight: rank <= 3 ? 'bold' : 'normal' };
+					 },
 				},
 			},
 			scales: {
-				x:{ticks:{autoskip:false,maxRotation:90,minRotation:90,fontSize:8}},
+				x:{ticks:{autoskip:false,maxRotation:0,minRotation:0,fontSize:8,
+					color:(ctx) => ctx.index === 0 ? 'red' : 'black',
+					callback: function(value,index,ticks) {
+					const words = String(this.getLabelForValue(value)).split('');
+					words.forEach(i =>{i===','?words[words.indexOf(i)]=' ':i});
+					return words;
+				}}},
 				y1: {
 					type: "linear",
 					position: "left",
@@ -1011,6 +1034,24 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 		},
 	});
 }
+
+function CalcRanks(values){
+	const rank = values.map((v,i)=>({v,i}))
+	.sort((a,b)=>b.v - a.v);
+	const ranks =[];
+	let currentRank = 1;
+	for(let i=0;i<rank.length;i++){
+		const item = rank[i];
+		if(i>0 && item.v === rank[i-1].v){
+			ranks[item.i] = currentRank;
+		}else{
+			currentRank = i+1;
+			ranks[item.i] = currentRank;
+		}
+	}
+	return ranks;
+}
+
 function iLB() {
 	const containers = document.querySelectorAll(".image-container.medium");
 	const lightbox = document.getElementById("lightbox");
