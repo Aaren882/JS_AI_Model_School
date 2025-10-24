@@ -1099,15 +1099,16 @@ async function Compare(CurrentJson) {
 		year: FirstYear.value,
 		year_TG: SecYear.value,
 	};
-
+	
 	//- Request Data
 	const compareData = await loadCdata(CompareJson);
+	
+	tableBody.innerHTML = ""; //- Clear TableBody
 
-	tableBody.innerHTML = "";
-	const arrays = [compareData.source, compareData.target];
+	const arrays = [compareData.source.flat(), compareData.target.flat()];
 	const lookups = arrays.map((item) => {
 		let obj = {};
-		item.forEach(({ schoolcode, schoolname, deptname, category, r_score }) => {
+		item.forEach(({ schoolcode, deptname, category, r_score }) => {
 			//- #NOTE - Checking "school" mode
 			if (currentDisplayMode === "school") return (obj[schoolcode] = r_score);
 
@@ -1136,7 +1137,7 @@ async function Compare(CurrentJson) {
 	});
 
 	const [lup1, lup2] = lookups;
-	const allK = await Array.from(
+	const allK = Array.from(
 		new Set([...Object.keys(lup1), ...Object.keys(lup2)])
 	);
 
@@ -1152,29 +1153,33 @@ async function Compare(CurrentJson) {
 		});
 
 	//- Add Rows
-	const { universityCode, categories, departmentName } = selectedDepartment;
-	MA.forEach((row) => {
+	const { universityCode, categories = [], departmentName = "" } =
+		selectedDepartment || selectedUniversity;
+
+		MA.forEach((row) => {
 		const tr = document.createElement("tr");
 		const key = row[3];
-		const [schoolCode, departName, category] = key.split("/");
-
+		const [schoolCode = key, departName = "", category = ""] = key.split("/");
+		
 		//- Hight light the selected
 		if (
 			universityCode === schoolCode &&
-			categories.includes(category) &&
-			departmentName === departName
+			(
+				category === "" || //- on School Mode
+				categories.includes(category) && departmentName === departName
+			)
 		) {
 			tr.style.backgroundColor = "#91f00b74";
 		}
-		
+
 		//- Add Values
 		row.forEach((item, index) => {
 			const td = document.createElement("td");
 
 			if (index === 3) {
 				let text = "";
-				td.classList.add('compare-column'); //- Apply css
-				
+				td.classList.add("compare-column"); //- Apply css
+
 				// Check key exist
 				if (lup1[key] !== undefined && lup2[key] !== undefined) {
 					td.style.backgroundColor = "#ffffffff";
@@ -1186,8 +1191,7 @@ async function Compare(CurrentJson) {
 					td.style.backgroundColor = "#74e874ff";
 				}
 				td.textContent = text;
-			} else 
-				td.textContent = item;
+			} else td.textContent = item;
 
 			tr.appendChild(td);
 		});
