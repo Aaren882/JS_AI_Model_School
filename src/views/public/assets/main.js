@@ -1094,23 +1094,28 @@ async function Compare(CurrentJson) {
 	}
 	const tableBody = document.querySelector("#resultTable tbody");
 	tableBody.innerHTML = "等待中";
-	CompareJson = CurrentJson;
-	const SelY1 = FirstYear.value;
-	const SelY2 = SecYear.value;
 
-	const [node1, node2] = await Promise.all([
-		loadCdata(CompareJson, SelY1),
-		loadCdata(CompareJson, SelY2),
-	]);
-	const arrays = [node1, node2];
-	tableBody.innerHTML = "";
+	//- Set up compare JSON
+	CompareJson = {
+		...CurrentJson,
+		year: FirstYear.value,
+		year_TG: SecYear.value,
+	};
+	
+	//- Request Data
+	const compareData = await loadCdata(CompareJson);
+	
+	tableBody.innerHTML = ""; //- Clear TableBody
+
+	const arrays = [compareData.source.flat(), compareData.target.flat()];
 	const lookups = arrays.map((item) => {
-		const obj = {};
-		item.forEach((i) => {
-			if (currentDisplayMode === "school") obj[i.schoolcode] = i.r_score;
-			else {
-				obj[i.deptcode] = i.r_score;
-			}
+		let obj = {};
+		item.forEach(({ schoolcode, deptname, category, r_score }) => {
+			//- #NOTE - Checking "school" mode
+			if (currentDisplayMode === "school") return (obj[schoolcode] = r_score);
+
+			const key = `${schoolcode}/${deptname}/${category}`;
+			obj[key] = r_score;
 		});
 		return obj;
 	});
@@ -1123,9 +1128,9 @@ async function Compare(CurrentJson) {
 			}
 		});
 	});
-	const lup1 = lookups[0];
-	const lup2 = lookups[1];
-	const allK = await Array.from(
+
+	const [lup1, lup2] = lookups;
+	const allK = Array.from(
 		new Set([...Object.keys(lup1), ...Object.keys(lup2)])
 	);
 
@@ -1140,20 +1145,45 @@ async function Compare(CurrentJson) {
 			];
 		});
 
-	MA.forEach((row) => {
+	//- Add Rows
+	const { universityCode, categories = [], departmentName = "" } =
+		selectedDepartment || selectedUniversity;
+
+		MA.forEach((row) => {
 		const tr = document.createElement("tr");
+		const key = row[3];
+		const [schoolCode = key, departName = "", category = ""] = key.split("/");
+		
+		//- Hight light the selected
+		if (
+			universityCode === schoolCode &&
+			(
+				category === "" || //- on School Mode
+				categories.includes(category) && departmentName === departName
+			)
+		) {
+			tr.style.backgroundColor = "#91f00b74";
+		}
+
+		//- Add Values
 		row.forEach((item, index) => {
 			const td = document.createElement("td");
 			td.textContent = item;
 			if (index === 3) {
-				if (lup1[row[0]] !== undefined && lup2[row[0]] !== undefined) {
+				let text = "";
+				td.classList.add("compare-column"); //- Apply css
+
+				// Check key exist
+				if (lup1[key] !== undefined && lup2[key] !== undefined) {
 					td.style.backgroundColor = "#ffffffff";
 				} else if (lup2[row[0]] === undefined) {
 					td.style.backgroundColor = "#f66262ff";
 				} else {
 					td.style.backgroundColor = "#74e874ff";
 				}
-			}
+				td.textContent = text;
+			} else td.textContent = item;
+
 			tr.appendChild(td);
 		});
 		tableBody.appendChild(tr);
