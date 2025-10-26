@@ -8,6 +8,7 @@ import {
 //- Make sure DB is connected
 console.log("Connecting Database...");
 
+const postfix = process.env.QUERY_POSTFIX || "";
 let dbClient = null;
 if (!dbClient) {
 	/* dbClient = new Client({
@@ -85,7 +86,6 @@ export class dataBase_methods {
 		];
 	}
 	static async initCreateDatabase(year = 111, TableName = "") {
-		const postfix = process.env.QUERY_POSTFIX || "";
 		const query_TableName = `QUERY_${year}${
 			(TableName !== "" ? "_" : "") + TableName
 		}${postfix}`;
@@ -135,7 +135,7 @@ export class dataBase_methods {
 	static async getAllSchool(year_Int = -1) {
 		const query = `
       SELECT *
-      FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}"
+      FROM public."QUERY_${year_Int}${postfix}"
     `;
 
 		try {
@@ -158,7 +158,7 @@ export class dataBase_methods {
 						text: `
 							SELECT 
 								"deptcode"
-							FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}"
+							FROM public."QUERY_${year_Int}${postfix}"
 							WHERE "schoolcode" = \'${universityCode}\'
 						`,
 						rowMode: "array",
@@ -194,11 +194,11 @@ export class dataBase_methods {
 				SELECT 
 					SC_TB.schoolcode AS SC,
 					TG_TB.schoolcode AS TG
-				FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}" SC_TB
+				FROM public."QUERY_${year_Int}${postfix}" SC_TB
 				JOIN
 				(
 					SELECT *
-					FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}"
+					FROM public."QUERY_${year_Int}${postfix}"
 				) TG_TB
 				ON SC_TB.schoolname = TG_TB.schoolname
 				WHERE 
@@ -214,11 +214,11 @@ export class dataBase_methods {
 				SELECT 
 					SC_TB.deptcode AS \"SC\",
 					TG_TB.deptcode AS \"TG\"
-				FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}" SC_TB
+				FROM public."QUERY_${year_Int}${postfix}" SC_TB
 				JOIN
 				(
 					SELECT *
-					FROM public."QUERY_${year_TG_Int}${process.env.QUERY_POSTFIX || ""}"
+					FROM public."QUERY_${year_TG_Int}${postfix}"
 				) TG_TB
 				ON SC_TB.schoolcode = TG_TB.schoolcode
 				WHERE 
@@ -271,7 +271,7 @@ export class dataBase_methods {
 							AVG("r_score") AS "r_score",
 							AVG("shiftratio") AS "shiftratio",
 							AVG("avg") AS "AVG"
-						FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}"
+						FROM public."QUERY_${year_Int}${postfix}"
 						WHERE "schoolcode" in (
 							\'${res_nodes["nodes"].map((x) => x[0].slice(0, 3)).join("','")}\'
 						)
@@ -296,7 +296,7 @@ export class dataBase_methods {
 							"r_score",
 							"shiftratio",
 							"avg"
-						FROM public."QUERY_${year_Int}${process.env.QUERY_POSTFIX || ""}"
+						FROM public."QUERY_${year_Int}${postfix}"
 						WHERE "deptcode" in (
 							\'${res_nodes["nodes"].map((x) => x[0]).join("','")}\'
 						)
@@ -379,46 +379,8 @@ export class dataBase_methods {
 	static async getAllMatches_FullDetail(year_Int = -1) {
 		const query = {
 			text: `
-			(
-				SELECT 
-					CAST (WINNER AS text),
-					CAST (LOSER AS text),
-					false AS isDraw
-				FROM
-				(
-					SELECT 
-						一 AS WINNER,
-						unnest(array[
-							二,
-							三,
-							四,
-							五,
-							六
-						]) AS LOSER
-					FROM public.admission_${year_Int}
-				)
-				WHERE 
-					LOSER IS NOT NULL
-			) UNION (
-				SELECT 
-					CAST (WINNER AS text),
-					CAST (LOSER AS text),
-					true AS isDraw
-				FROM
-				(
-					SELECT 
-						二 AS WINNER,
-						unnest(array[
-							三,
-							四,
-							五,
-							六
-						]) AS LOSER
-					FROM public.admission_${year_Int}
-				)
-				WHERE 
-					LOSER IS NOT NULL
-			)
+			SELECT *
+			FROM public.\"QUERY_${year_Int}_admission${postfix}\"
 			`,
 			rowMode: "array",
 		};
