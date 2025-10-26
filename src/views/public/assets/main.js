@@ -941,14 +941,14 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 		if (currentDisplayMode === "school") {
 			const [schoolname, schoolcode] = dataParser(d, ["schoolname", "schoolcode"]);
 
-			return `[${schoolcode}] - ${schoolname}`;
+			return `${schoolcode} - ${schoolname}`;
 		} else {
 			
 			//- rest of the format
 			const result = dataParser(d, ["schoolname", "deptname", "category"]);
 			const [, deptname, category] = result;
 	
-			result[1] = `${deptname} - [${category}${simplifyCategory(category)}]`;
+			result[1] = `${deptname} - ${category}${simplifyCategory(category)}`;
 			return result.slice(0, 2);
 		}
 	});
@@ -1009,14 +1009,14 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 			const result = dataParser(d[0], ["schoolname", "schoolcode"]);
 			const [schoolname, schoolcode] = result;
 
-			return `[${schoolcode}] - ${schoolname}`;
+			return `${schoolcode} - ${schoolname}`;
 		} else {
 
 			//- rest of the format
 			const result = dataParser(d[0], ["schoolname", "deptname", "category"]);
 			const [, deptname, category] = result;
 
-			result[1] = `${deptname} - [${category}${simplifyCategory(category)}]`;
+			result[1] = `${deptname} - ${category}${simplifyCategory(category)}`;
 			return result.slice(0, 2);
 		}
 	});
