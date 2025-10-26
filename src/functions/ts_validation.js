@@ -34,7 +34,7 @@ class Ts {
 
 		//- Store into memory
 		if (!_cache.has(year)) {
-			data = await Promise.all([Ts.getNodes(year), Ts.getEdges(year)]);
+			data = await Promise.all([this.getNodes(year), this.getEdges(year)]);
 
 			_cache.set(year, data);
 		}
@@ -98,7 +98,7 @@ class Ts {
 
 	//- Rate all the matches (EDGES)
 	static async target_matching_Ratings(year = 111, target = "") {
-		const matches = await Ts.target_matching(year, target, false);
+		const matches = await this.target_matching(year, target, false);
 
 		let edges = matches.map((x) => x.slice(0, 2));
 		let uniqueIDs = [...new Set(edges.flat())];
@@ -107,7 +107,7 @@ class Ts {
 
 		matches.forEach((x) => {
 			const [winner, loser, isDraw] = x;
-			const [newP1, newP2] = Ts.rate(
+			const [newP1, newP2] = this.rate(
 				[ratings.get(winner), ratings.get(loser)],
 				isDraw
 			);
@@ -118,7 +118,7 @@ class Ts {
 		return {
 			nodes: [...ratings].map((x) => {
 				const [node, rating] = x;
-				return [node, Ts.R_score(rating).toFixed(2)];
+				return [node, this.R_score(rating).toFixed(2)];
 			}),
 			edges: edges,
 		};
@@ -133,7 +133,7 @@ class Ts {
 		
 		const matches = [];
 		const tasks = targets.map((target) =>
-			Ts.target_matching(year, target, false)
+			this.target_matching(year, target, false)
 		);
 		
 		for await (const task of tasks) {
@@ -147,20 +147,50 @@ class Ts {
 
 		const ratings = new Map(uniqueIDs.map((x) => [x, new Rating()]));
 
-		matches.forEach((x) => {
-			const [winner, loser, isDraw] = x;
-			const [newP1, newP2] = Ts.rate(
-				[ratings.get(winner), ratings.get(loser)],
-				isDraw
-			);
-			ratings.set(winner, newP1);
-			ratings.set(loser, newP2);
+		matches.forEach(([winner, loser, Arr_isDraw]) => {
+
+			Arr_isDraw.forEach((isDraw) => {
+				const [newP1, newP2] = this.rate(
+					[ratings.get(winner), ratings.get(loser)],
+					isDraw
+				);
+				ratings.set(winner, newP1);
+				ratings.set(loser, newP2);
+			});
 		});
 
 		return {
 			nodes: [...ratings].map((x) => {
 				const [node, rating] = x;
-				return [node, Ts.R_score(rating).toFixed(2)];
+				return [node, this.R_score(rating).toFixed(2)];
+			}),
+			edges: edges,
+		};
+	}
+
+	//- #NOTE : A simple meat grinder
+	static async simple_target_matching_Ratings(year = 111, targets = []) {
+		let edges = targets.map((x) => x.slice(0, 2));
+		let uniqueIDs = [...new Set(edges.flat())];
+
+		const ratings = new Map(uniqueIDs.map((x) => [x, new Rating()]));
+
+		targets.forEach(([winner, loser, Arr_isDraw]) => {
+
+			Arr_isDraw.forEach((isDraw) => {
+				const [newP1, newP2] = this.rate(
+					[ratings.get(winner), ratings.get(loser)],
+					isDraw
+				);
+				ratings.set(winner, newP1);
+				ratings.set(loser, newP2);
+			});
+		});
+
+		return {
+			nodes: [...ratings].map((x) => {
+				const [node, rating] = x;
+				return [node, this.R_score(rating).toFixed(2)];
 			}),
 			edges: edges,
 		};
@@ -168,7 +198,7 @@ class Ts {
 
 	//- Get edges around "target"
 	static async target_matching(year = 111, target = "", slice = true) {
-		const [, edges] = await Ts.createQuery(year);
+		const [, edges] = await this.createQuery(year);
 		let cur_nodes = edges.filter((x) => x.includes(target));
 
 		if (slice) cur_nodes = cur_nodes.map((x) => x.slice(0, 2));
@@ -202,18 +232,18 @@ export function Ts_matching_Ratings(year = 111, query_target) {
 	return Ts.target_matching_Ratings(year, query_target);
 };
 export function Ts_matching_Ratings_Array(year = 111, query_target) {
-	return Ts.targets_matching_Ratings(year, query_target);
+	return Ts.simple_target_matching_Ratings(year, query_target);
 };
 
 export async function Ts_data(year = 111) {
 	try {
-		let [node_ids, edges] = await Ts.createQuery(year);
+		let [node_ids, edges] = await this.createQuery(year);
 
 		const nodes = new Map(node_ids.map((x) => [x, new Rating()]));
 
 		edges.forEach((x) => {
 			const [winner, loser, isDraw] = x;
-			const [newP1, newP2] = Ts.rate(
+			const [newP1, newP2] = this.rate(
 				[nodes.get(winner), nodes.get(loser)],
 				isDraw
 			);

@@ -123,25 +123,60 @@ export class dataBase_methods {
 		const { year = "", mode, departmentCodes, universityCode } = bodyData;
 		const year_Int = parseInt(year);
 
+		let query;
 		try {
 			switch (mode) {
 				case "school":
 					//- getAllRelations for each department
-					const query = {
+					query = {
 						text: `
 							SELECT 
-								"deptcode"
-							FROM public."QUERY_${year_Int}${postfix}"
-							WHERE "schoolcode" = \'${universityCode}\'
+							winner,
+							loser,
+							array_agg(isdraw) AS results
+						FROM (
+							SELECT
+								SUBSTRING(winner,1,3) AS winner,
+								SUBSTRING(loser,1,3) AS loser,
+								isdraw
+							FROM public.\"QUERY_${year_Int}_admission${postfix}\"
+							WHERE
+								winner LIKE '${universityCode}%' OR
+								loser LIKE '${universityCode}%'
+						)
+						WHERE
+							(winner != loser) 
+						GROUP BY
+							winner,
+							loser
 						`,
 						rowMode: "array",
 					};
-					let res_nodes = await dbClient.query(query);
-					return Ts_matching_Ratings_Array(year_Int, res_nodes.rows.flat());
+					break;
 
 				default:
-					return Ts_matching_Ratings_Array(year_Int, departmentCodes);
+					let stringify = departmentCodes.join("','");
+					query = {
+						text: `
+							SELECT
+								winner,
+								loser,
+								array_agg(isdraw)
+							FROM public.\"QUERY_${year_Int}_admission${postfix}\"
+							WHERE
+								winner in (\'${stringify}\') OR
+								loser in (\'${stringify}\')
+							GROUP BY
+								winner,
+								loser
+						`,
+						rowMode: "array",
+					};
+					break;
 			}
+			const res_nodes = await dbClient.query(query);
+			return Ts_matching_Ratings_Array(year_Int, res_nodes.rows);
+
 		} catch (err) {
 			console.error(err);
 		}
@@ -348,12 +383,18 @@ export class dataBase_methods {
 			console.error(err.message);
 		}
 	}
-	//- This only outputs arrays of "[winner<STRING>, loser<STRING>, isDraw<BOOL>]"
+	//- This only outputs arrays of "[winner<STRING>, loser<STRING>, isDraw<BOOL[]>]"
 	static async getAllMatches_FullDetail(year_Int = -1) {
 		const query = {
 			text: `
-			SELECT *
-			FROM public.\"QUERY_${year_Int}_admission${postfix}\"
+				SELECT
+					winner,
+					loser,
+					array_agg(isdraw)
+				FROM public."QUERY_${year_Int}_admission${postfix}"
+				GROUP BY
+					winner,
+					loser
 			`,
 			rowMode: "array",
 		};
