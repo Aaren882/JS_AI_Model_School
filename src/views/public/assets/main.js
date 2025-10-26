@@ -8,15 +8,21 @@ const showdownCt = new showdown.Converter({
 // 全局變量
 let selectedDepartment = null;
 let selectedUniversity = null;
+
 let universityData = {};
 let originalUniversityData = {};
+let originalUniversitySumData = {};
+
 let currentYear = "111"; // 預設年份
 let currentDisplayMode = "group"; // 預設顯示模式：系組
 let currentSumMode = "getRelationData"; //- #NOTE : "getRelationData" or "getSummaryData"
+
 Chart.register(ChartDataLabels);
+
 let Cstatus = false;
 let SelectItem = null;
 let CompareJson = null;
+
 // DOM 元素
 const searchBox = document.querySelector(".search-box");
 const universityList = document.getElementById("universityList");
@@ -37,10 +43,12 @@ async function loadSchoolData(year = "111") {
 			throw new Error(`無法載入 ${year} 年資料`);
 		}
 
-		let response_Data = await response.json();
-		originalUniversityData = response_Data; //- Update school data
+		//- Update school data
+		let { SchoolData, SchoolSum } = await response.json();
+		originalUniversitySumData = SchoolSum;
+		originalUniversityData = SchoolData;
 
-		return parseSchoolData(response_Data);
+		return parseSchoolData(SchoolData);
 	} catch (error) {
 		console.error(`無法讀取 ${year} 年的資料`, error);
 		return {};
@@ -51,7 +59,6 @@ async function loadSchoolData(year = "111") {
 function parseSchoolData(schoolData) {
 	const data = {};
 	for (let i = 0; i < schoolData.length; i++) {
-		const elem = schoolData[i];
 		const {
 			//- #NOTE - all the query name will be lowercase
 			schoolcode,
@@ -59,7 +66,7 @@ function parseSchoolData(schoolData) {
 			deptcode,
 			deptname,
 			category,
-		} = elem;
+		} = schoolData[i];
 
 		let curData = data[schoolcode];
 		if (!curData) {
@@ -85,7 +92,9 @@ function parseSchoolData(schoolData) {
 }
 
 function dataParser(searchDept, joinElements = ["schoolname"]) {
-	let searched = originalUniversityData.find((x) => x.deptcode === searchDept);
+	const searched = currentDisplayMode === "school"?
+		originalUniversitySumData.find((x) => x.schoolcode === searchDept) :  //- search for school
+		originalUniversityData.find((x) => x.deptcode === searchDept);
 
 	return joinElements.map((x) => searched[x]);
 }
@@ -172,8 +181,8 @@ function generateUniversityList(data, displayMode) {
 				const dept = uniqueDepartments[deptName];
 				html += `
                     <li class="department-item" data-codes="${dept.codes.join(
-											"|"
-										)}" data-categories="${dept.categories.join("|")}">
+					"|"
+				)}" data-categories="${dept.categories.join("|")}">
                         ${dept.name}
                     </li>
                 `;
@@ -336,7 +345,7 @@ function CompareChange() {
 	changeButtons.forEach((btn) => {
 		btn.classList.remove("active");
 		ChangeT.style.display = "none";
-		//AllContainer.forEach(item => {item.classList.toggle('hide'),console.log(item)});
+
 		AllContainer.forEach((item) => item.classList.remove("hide"));
 		if (Cstatus) {
 			btn.classList.add("active");
@@ -544,7 +553,9 @@ function updateSelectedSchool(schoolElement) {
 		})
 			.then((res) => res.json())
 			.then((json) => {
+				console.log(json);
 				const { nodes, edges } = json;
+
 				drawLineChart("chart-line-1", nodes, "錄取率", "admissonrate");
 				drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
 				drawLineChart(
@@ -601,8 +612,8 @@ function updateSelectedDepartment(departmentElement) {
 			", "
 		)} | 年份: ${currentYear}<br>
             模式: 系所模式 | 招生群別: [${categories
-							.map(simplifyCategory)
-							.join(", ")}]
+				.map(simplifyCategory)
+				.join(", ")}]
         `;
 	} else {
 		// 系組模式
@@ -627,8 +638,8 @@ function updateSelectedDepartment(departmentElement) {
 		selectedInfo.innerHTML = `
             學校代碼: ${schoolCode} | 科系代碼: ${deptCode} | 年份: ${currentYear}<br>
             模式: 系組模式 | 招生群別: ${categories
-							.map(category => `[${category}${simplifyCategory(category)}]`)
-							.join(", ")}
+				.map(category => `[${category}${simplifyCategory(category)}]`)
+				.join(", ")}
         `;
 
 		//- Get AI analyze
@@ -658,6 +669,7 @@ function updateSelectedDepartment(departmentElement) {
 		})
 			.then((res) => res.json())
 			.then((json) => {
+				console.log(json);
 				const { nodes, edges } = json;
 
 				drawLineChart("chart-line-1", nodes, "錄取率", "admissonrate");
@@ -851,7 +863,9 @@ function renderNetwork(nodes, edges) {
 				data: {
 					id: n[0],
 					label:
-						localizeDept(n[0], ["deptcode", "schoolname", "deptname"]) + n[1],
+						currentDisplayMode === "school" ?
+							`${localizeDept(n[0], ["schoolname"])} ${n[1]}` :
+							`${localizeDept(n[0], ["deptcode", "schoolname", "deptname"])} ${n[1]}`
 				},
 			})),
 			...edges.map((e) => ({ data: { source: e[0], target: e[1] } })),
@@ -914,11 +928,21 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 	nodes = nodes.map((x) => x[0]);
 	const values = nodes.map((d) => parseFloat(localizeDept(d, [dataKey])));
 	const labels = nodes.map((d) => { //- Formatting labels
-		const result = dataParser(d, ["schoolname", "deptname", "category"]);
-		const [, deptname, category] = result;
-		
-		result[1] = `${deptname} - [${category}${simplifyCategory(category)}]`;
-		return result.slice(0,2);
+
+		//- Separate format for "school"
+		if (currentDisplayMode === "school") {
+			const [schoolname, schoolcode] = dataParser(d, ["schoolname", "schoolcode"]);
+
+			return `[${schoolcode}] - ${schoolname}`;
+		} else {
+			
+			//- rest of the format
+			const result = dataParser(d, ["schoolname", "deptname", "category"]);
+			const [, deptname, category] = result;
+	
+			result[1] = `${deptname} - [${category}${simplifyCategory(category)}]`;
+			return result.slice(0, 2);
+		}
 	});
 
 	safeDraw(containerId, {
@@ -960,11 +984,21 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 }
 function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 	const labels = nodes.map((d) => { //- Formatting labels
-		const result = dataParser(d[0], ["schoolname", "deptname", "category"]);
-		const [, deptname, category] = result;
+		//- Separate format for "school"
+		if (currentDisplayMode === "school") {
+			const result = dataParser(d[0], ["schoolname", "schoolcode"]);
+			const [schoolname, schoolcode] = result;
 
-		result[1] = `${deptname} - [${category}${simplifyCategory(category)}]`;
-		return result.slice(0, 2);
+			return `[${schoolcode}] - ${schoolname}`;
+		} else {
+
+			//- rest of the format
+			const result = dataParser(d[0], ["schoolname", "deptname", "category"]);
+			const [, deptname, category] = result;
+
+			result[1] = `${deptname} - [${category}${simplifyCategory(category)}]`;
+			return result.slice(0, 2);
+		}
 	});
 	const rValues = nodes.map((d) => d[1]);
 	const avgValues = nodes.map((d) =>
@@ -1073,7 +1107,7 @@ function iLB() {
 		}
 	});
 }
-async function loadCdata(DATA, yearData) {
+async function loadCdata(DATA) {
 	const res = await fetch(`api/getSummaryData`, {
 		method: "POST",
 		headers: {
@@ -1099,10 +1133,10 @@ async function Compare(CurrentJson) {
 		year: FirstYear.value,
 		year_TG: SecYear.value,
 	};
-	
+
 	//- Request Data
 	const compareData = await loadCdata(CompareJson);
-	
+
 	tableBody.innerHTML = ""; //- Clear TableBody
 
 	const arrays = [compareData.source.flat(), compareData.target.flat()];
@@ -1156,11 +1190,11 @@ async function Compare(CurrentJson) {
 	const { universityCode, categories = [], departmentName = "" } =
 		selectedDepartment || selectedUniversity;
 
-		MA.forEach((row) => {
+	MA.forEach((row) => {
 		const tr = document.createElement("tr");
 		const key = row[3];
 		const [schoolCode = key, departName = "", category = ""] = key.split("/");
-		
+
 		//- Hight light the selected
 		if (
 			universityCode === schoolCode &&

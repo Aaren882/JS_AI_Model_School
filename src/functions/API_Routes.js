@@ -24,8 +24,10 @@ API_router.get("/getAllSchool", async (req, res) => {
 
 	try {
 		//- Responses
-		let _res = await dataBase_methods.getAllSchool(year_Int);
-		res.status(200).json(_res);
+		res.status(200).json({
+			SchoolData: await dataBase_methods.getAllSchool(year_Int),
+			SchoolSum: await dataBase_methods.getAllSumSchool(year_Int)
+		});
 	} catch (err) {
 		res.status(404).send("404 Error no data.");
 		console.error(err);

@@ -118,6 +118,30 @@ export class dataBase_methods {
 			console.error(err.message);
 		}
 	}
+	static async getAllSumSchool(year_Int = -1) {
+		const query = `
+      SELECT 
+				schoolcode,
+				schoolname,
+				AVG(posvalid) AS posvalid,
+				AVG(admissionvalidity) AS admissionvalidity,
+				AVG(admissonrate) AS admissonrate,
+				AVG(r_score) AS r_score,
+				AVG(shiftratio) AS shiftratio,
+				AVG("avg") AS "avg"
+			FROM public."QUERY_${year_Int}${postfix}"
+			GROUP BY
+				schoolcode,
+				schoolname
+    `;
+
+		try {
+			let res = await dbClient.query(query);
+			return res.rows;
+		} catch (err) {
+			console.error(err.message);
+		}
+	}
 
 	static async getRelationData(bodyData) {
 		const { year = "", mode, departmentCodes, universityCode } = bodyData;
@@ -130,7 +154,7 @@ export class dataBase_methods {
 					//- getAllRelations for each department
 					query = {
 						text: `
-							SELECT 
+						SELECT
 							winner,
 							loser,
 							array_agg(isdraw) AS results
