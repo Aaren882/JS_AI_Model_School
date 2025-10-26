@@ -80,10 +80,10 @@ export class SchoolDB_Client {
 export class dataBase_methods {
 	static async initDatabase(year = 111) {
 		
-		return [
-			this.initCreateDatabase(year),
-			this.initCreateDatabase(year, "admission")
-		];
+		//- #NOTE admission have to be first
+		//	-- because other views depend on it
+		await this.initCreateDatabase(year, "admission");
+		await this.initCreateDatabase(year);
 	}
 	static async initCreateDatabase(year = 111, TableName = "") {
 		const query_TableName = `QUERY_${year}${
