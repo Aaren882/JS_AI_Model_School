@@ -35,6 +35,7 @@
 **/data
 *.tar
 *.sql
-
+.prettierrc
+.editorconfig
 LICENSE
 README.md
