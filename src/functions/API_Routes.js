@@ -56,7 +56,7 @@ API_router.get("/getSchoolAnalyze", async (req, res) => {
 		if (nodes === "") throw `API error \"getSchoolAnalyze\" no Nodes were found !!!`;
 
 		//- Asking AI
-		const query = {
+		/*const query = {
 			text: `
 				SELECT 
 					"校系代碼",
@@ -114,10 +114,19 @@ API_router.get("/getSchoolAnalyze", async (req, res) => {
 		const target = q.rows.find((x) => int_ID === x["校系代碼"]);
 		const data = q.rows.map((x) => {
 			return { [x["校系代碼"]]: x };
-		})[0];
+		})[0]; */
 
-		let chat_Res = await QueryChat(int_Year, data, target, "");
-		res.status(200).json({ chat: chat_Res.message.content });
+		const chat_Res = await fetch(`http://${process.env.DB_IP}:5678/webhook/ollama-hook`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ year: int_Year, ID: int_ID, relations: nodes }),
+		});
+		// let chat_Res = await QueryChat(int_Year, data, target, "");
+		// res.status(200).json({ chat: chat_Res.message.content });
+		let chat = await chat_Res.json();
+		res.status(200).json({ chat });
 	} catch (err) {
 		res.status(404).send("404 Error no data.");
 		console.error(err);
