@@ -1,0 +1,3 @@
+[submodule "review_bot"]
+	path = review_bot
+	url = https://github.com/Aaren882/pr-review-ollama-ai.git
