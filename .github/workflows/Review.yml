@@ -28,7 +28,7 @@ jobs:
         name: Checkout repository and submodules
         uses: actions/checkout@v5 # To clone the repository
         with:
-          submodules: recursive
+          submodules: true
       - 
         name: Run Ollama Code Review
         uses: ./review_bot
@@ -36,5 +36,5 @@ jobs:
           OLLAMA-ADDRESS: ${{ secrets.OLLAMA_ADDRESS }} # Local Ollama server
           file-pattern: "**/*.{js}"
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          base-branch: "main"
+          base-branch: "origin/main"
           model: ${{ secrets.OLLAMA_MODEL }}
