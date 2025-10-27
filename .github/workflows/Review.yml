@@ -25,7 +25,10 @@ jobs:
           tags: tag:ci
       
       - 
+        name: Checkout repository and submodules
         uses: actions/checkout@v5 # To clone the repository
+        with:
+          submodules: recursive
       - 
         name: Run Ollama Code Review
         uses: ./review_bot
