@@ -25,6 +25,8 @@ jobs:
           tags: tag:ci
       
       - 
+        uses: actions/checkout@v5 # To clone the repository
+      - 
         name: Run Ollama Code Review
         uses: ./review_bot
         with:
