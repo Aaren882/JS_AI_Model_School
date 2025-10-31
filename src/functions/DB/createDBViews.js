@@ -98,12 +98,10 @@ async function createDataView(year, query_TableName) {
     `,
 	};
 
-	/* const [query_data, ts_data] = await Promise.all([
+	const [query_data, ts_data] = await Promise.all([
 		dbClient.query(query),
 		Ts_data(year),
-	]); */
-  const query_data  = await dbClient.query(query);
-  const ts_data = await Ts_data(year);
+	]);
 
 	//- #NOTE : Update R-score to DB
 	let R_scores = query_data.rows
