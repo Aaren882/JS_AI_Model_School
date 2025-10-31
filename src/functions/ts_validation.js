@@ -237,13 +237,13 @@ export function Ts_matching_Ratings_Array(year = 111, query_target) {
 
 export async function Ts_data(year = 111) {
 	try {
-		let [node_ids, edges] = await this.createQuery(year);
+		let [node_ids, edges] = await Ts.createQuery(year);
 
 		const nodes = new Map(node_ids.map((x) => [x, new Rating()]));
 
 		edges.forEach((x) => {
 			const [winner, loser, isDraw] = x;
-			const [newP1, newP2] = this.rate(
+			const [newP1, newP2] = Ts.rate(
 				[nodes.get(winner), nodes.get(loser)],
 				isDraw
 			);
