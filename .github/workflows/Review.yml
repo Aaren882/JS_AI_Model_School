@@ -34,7 +34,7 @@ jobs:
         uses: ./review_bot
         with:
           OLLAMA-ADDRESS: ${{ secrets.OLLAMA_ADDRESS }} # Local Ollama server
-          file-pattern: "**/*.{js}"
+          file-pattern: "*.*"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           base-branch: "origin/main"
           model: ${{ secrets.OLLAMA_MODEL }}
