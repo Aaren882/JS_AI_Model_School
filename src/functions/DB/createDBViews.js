@@ -15,19 +15,19 @@ async function createDataView(year, query_TableName) {
         MIN(admissionValidity) AS admissionValidity,
         MIN(
           CASE
-          WHEN TotalAdmissonNumber = 0 THEN
+          WHEN TotalAdmissionNumber = 0 THEN
             0
           ELSE
-            AdmissonNumber / TotalAdmissonNumber
+            AdmissionNumber / TotalAdmissionNumber
           END
-        ) AS AdmissonRate,
+        ) AS AdmissionRate,
         MIN(r_score) AS r_score,
         MIN(
           CASE
-          WHEN TotalAdmissonNumber = 0 THEN
+          WHEN TotalAdmissionNumber = 0 THEN
             0
           ELSE
-            AdmissonVacancies / TotalAdmissonNumber
+            AdmissionVacancies / TotalAdmissionNumber
           END
         ) AS ShiftRatio,
         MIN("avg") AS "avg"
@@ -144,11 +144,11 @@ async function createInitView(year, query_TableName) {
               )
             )
           END
-        ) AS AdmissonNumber,
-        cast ("一般生招生名額" AS DOUBLE PRECISION) AS TotalAdmissonNumber,
+        ) AS AdmissionNumber,
+        cast ("一般生招生名額" AS DOUBLE PRECISION) AS TotalAdmissionNumber,
         GREATEST(
           cast ("一般生名額空缺" AS DOUBLE PRECISION),0
-        ) AS AdmissonVacancies,
+        ) AS AdmissionVacancies,
          
         r_score AS r_score,
         (

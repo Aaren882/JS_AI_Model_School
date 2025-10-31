@@ -130,7 +130,7 @@ export class dataBase_methods {
 				schoolname,
 				AVG(posvalid) AS posvalid,
 				AVG(admissionvalidity) AS admissionvalidity,
-				AVG(admissonrate) AS admissonrate,
+				AVG(Admissionrate) AS Admissionrate,
 				AVG(r_score) AS r_score,
 				AVG(shiftratio) AS shiftratio,
 				AVG("avg") AS "avg"
@@ -304,7 +304,7 @@ export class dataBase_methods {
 							schoolname,
 							AVG("posvalid") AS "posvalid",
 							AVG("admissionvalidity") AS "admissionvalidity",
-							AVG("admissonrate") AS "admissonrate",
+							AVG("Admissionrate") AS "Admissionrate",
 							AVG("r_score") AS "r_score",
 							AVG("shiftratio") AS "shiftratio",
 							AVG("avg") AS "AVG"
@@ -329,7 +329,7 @@ export class dataBase_methods {
 							schoolname,
 							"posvalid",
 							"admissionvalidity",
-							"admissonrate",
+							"Admissionrate",
 							"r_score",
 							"shiftratio",
 							"avg"
