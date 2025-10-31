@@ -11,9 +11,9 @@ async function createDataView(year, query_TableName) {
         deptCode,
         deptName,
         category,
-        AVG(posValid) AS posValid,
-        AVG(admissionValidity) AS admissionValidity,
-        AVG(
+        MIN(posValid) AS posValid,
+        MIN(admissionValidity) AS admissionValidity,
+        MIN(
           CASE
           WHEN TotalAdmissonNumber = 0 THEN
             0
@@ -21,8 +21,8 @@ async function createDataView(year, query_TableName) {
             AdmissonNumber / TotalAdmissonNumber
           END
         ) AS AdmissonRate,
-        AVG(r_score) AS r_score,
-        AVG(
+        MIN(r_score) AS r_score,
+        MIN(
           CASE
           WHEN TotalAdmissonNumber = 0 THEN
             0
@@ -30,7 +30,7 @@ async function createDataView(year, query_TableName) {
             AdmissonVacancies / TotalAdmissonNumber
           END
         ) AS ShiftRatio,
-        AVG("avg") AS "avg"
+        MIN("avg") AS "avg"
       FROM 
         public."QUERY_${year}_init${process.env.QUERY_POSTFIX}"
     GROUP BY 
