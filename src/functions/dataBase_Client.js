@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { QueryViews, QueryAdmissionViews } from "./DB/createDBViews.js";
+import { QueryViews, QueryAdmissionViews, QueryInitViews } from "./DB/createDBViews.js";
 import {
 	Ts_matching_Ratings_Array,
 } from "./ts_validation.js";
@@ -53,10 +53,12 @@ export function initServerData(years = []) {
 export class dataBase_methods {
 	static async initDatabase(year = 111) {
 		
-		//- #NOTE admission have to be first
-		//	-- because other views depend on it
-		await this.initCreateDatabase(year, "admission");
-		await this.initCreateDatabase(year);
+		const INIT_List = ["init", "admission", ""];
+
+		//- #NOTE : Asynchronous matters, tables are dependence
+		INIT_List.forEach(async (x) => 
+			this.initCreateDatabase(year, x)
+		);
 	}
 	static async initCreateDatabase(year = 111, TableName = "") {
 		const query_TableName = `QUERY_${year}${
@@ -83,6 +85,9 @@ export class dataBase_methods {
 				switch (TableName) {
 					case "admission":
 						await QueryAdmissionViews(year, query_TableName);
+						break;
+					case "init": //- Initial computation Data
+						await QueryInitViews(year, query_TableName);
 						break;
 				
 					default:

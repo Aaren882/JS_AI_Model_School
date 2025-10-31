@@ -13,74 +13,26 @@ async function createDataView(year, query_TableName) {
         category,
         AVG(posValid) AS posValid,
         AVG(admissionValidity) AS admissionValidity,
-        AVG(AdmissonRate) AS AdmissonRate,
-        AVG(r_score) AS r_score,
-        AVG(ShiftRatio) AS ShiftRatio,
-        AVG("avg") AS "avg"
-      FROM (
-        SELECT 
-        (
-          SUBSTRING(
-            cast ("校系代碼" as varChar),1,3
-          )
-        ) AS schoolCode,
-        "Data_${year}".學校名稱 AS schoolName,
-        (
-          cast ("校系代碼" AS varChar)
-        ) AS deptCode,
-        "Data_${year}".系科組學程名稱 AS deptName,
-        "Data_${year}".群別代號 AS category,
-        "正取有效性" AS posValid,
-        "正備取有效性" AS admissionValidity,
-        (
+        AVG(
           CASE
-          WHEN "一般生招生名額" = 0 THEN 
+          WHEN TotalAdmissonNumber = 0 THEN
             0
           ELSE
-            (
-              (
-                cast ("一般生招生名額" AS DOUBLE PRECISION) -
-                LEAST(
-                  cast ("一般生招生名額" AS DOUBLE PRECISION),
-                  GREATEST(
-                    cast ("一般生名額空缺" AS DOUBLE PRECISION),
-                    0
-                  )
-                )
-              ) /
-            cast ("一般生招生名額" AS DOUBLE PRECISION)
-            )
+            AdmissonNumber / TotalAdmissonNumber
           END
         ) AS AdmissonRate,
-        r_score AS r_score,
-        (
+        AVG(r_score) AS r_score,
+        AVG(
           CASE
-          WHEN "一般生招生名額" = 0 THEN 
+          WHEN TotalAdmissonNumber = 0 THEN
             0
           ELSE
-            GREATEST(
-              cast ("一般生名額空缺" AS DOUBLE PRECISION),
-              0
-            ) / 
-            cast ("一般生招生名額" AS DOUBLE PRECISION)
+            AdmissonVacancies / TotalAdmissonNumber
           END
         ) AS ShiftRatio,
-        COALESCE(
-          "Distr_${year}".錄取總分數 /
-          (
-            "Distr_${year}".國文 +
-            "Distr_${year}".英文 +
-            "Distr_${year}".數學 +
-            "Distr_${year}".專業一 +
-            "Distr_${year}".專業二
-          )
-        , 0) AS "avg"
-      FROM Public."Distr_${year}"
-      RIGHT JOIN Public."Data_${year}" ON 
-        "Data_${year}".學校名稱 LIKE "Distr_${year}".學校名稱 AND
-        POSITION("Data_${year}".系科組學程名稱 IN "Distr_${year}".系科組學程名稱) > 0 AND
-        "Distr_${year}".群別代號 LIKE "Distr_${year}".群別代號
-    )
+        AVG("avg") AS "avg"
+      FROM 
+        public."QUERY_${year}_init${process.env.QUERY_POSTFIX}"
     GROUP BY 
       schoolCode,
       schoolName,
@@ -152,6 +104,92 @@ async function createDataView(year, query_TableName) {
 
 	//- create view table
 	await dbClient.query(create);
+}
+
+//- Prefix "QUERY_Init_" => 輕量整理後的初始資料
+async function createInitView(year, query_TableName) {
+
+  const query = {
+    text: `
+      SELECT
+        (
+          SUBSTRING(
+            cast ("校系代碼" as varChar),1,3
+          )
+        ) AS schoolCode,
+        "Data_${year}".學校名稱 AS schoolName,
+        (
+          cast ("校系代碼" AS varChar)
+        ) AS deptCode,
+        "Data_${year}".系科組學程名稱 AS deptName,
+        "Data_${year}".群別代號 AS category,
+        "正取有效性" AS posValid,
+        "正備取有效性" AS admissionValidity,
+
+        (
+          CASE
+          WHEN "一般生招生名額" = 0 THEN 
+            0
+          ELSE
+            (
+              (
+                cast ("一般生招生名額" AS DOUBLE PRECISION) -
+                LEAST(
+                  cast ("一般生招生名額" AS DOUBLE PRECISION),
+                  GREATEST(
+                    cast ("一般生名額空缺" AS DOUBLE PRECISION),
+                    0
+                  )
+                )
+              )
+            )
+          END
+        ) AS AdmissonNumber,
+        cast ("一般生招生名額" AS DOUBLE PRECISION) AS TotalAdmissonNumber,
+        GREATEST(
+          cast ("一般生名額空缺" AS DOUBLE PRECISION),0
+        ) AS AdmissonVacancies,
+         
+        r_score AS r_score,
+        (
+          CASE
+          WHEN "一般生招生名額" = 0 THEN 
+            0
+          ELSE
+            GREATEST(
+              cast ("一般生名額空缺" AS DOUBLE PRECISION),
+              0
+            ) / 
+            cast ("一般生招生名額" AS DOUBLE PRECISION)
+          END
+        ) AS ShiftRatio,
+        COALESCE(
+          "Distr_${year}".錄取總分數 /
+          (
+            "Distr_${year}".國文 +
+            "Distr_${year}".英文 +
+            "Distr_${year}".數學 +
+            "Distr_${year}".專業一 +
+            "Distr_${year}".專業二
+          )
+        , 0) AS "avg"
+      FROM Public."Distr_${year}"
+      RIGHT JOIN Public."Data_${year}" ON 
+        "Data_${year}".學校名稱 LIKE "Distr_${year}".學校名稱 AND
+        POSITION("Data_${year}".系科組學程名稱 IN "Distr_${year}".系科組學程名稱) > 0 AND
+        "Distr_${year}".群別代號 LIKE "Distr_${year}".群別代號
+    `,
+  };
+  const create = {
+    name: `create-${query_TableName}_VIEW_Table`,
+    text: `
+      CREATE MATERIALIZED VIEW "${query_TableName}" AS
+        ${query.text}
+    `,
+  };
+
+  //- create view table
+  await dbClient.query(create);
 }
 
 //- Prefix "QUERY_Admission_" => 甄選選擇
@@ -274,4 +312,7 @@ export function QueryViews(year, query_TableName) {
 
 export function QueryAdmissionViews(year, query_TableName) {
   return createAdmissionView(year, query_TableName);
+}
+export function QueryInitViews(year, query_TableName) {
+  return createInitView(year, query_TableName);
 }
