@@ -1,5 +1,5 @@
-import dbClient from "./dataBase_Client.js";
-import { dataBase_methods } from "./dataBase_Client.js";
+import dbClient from "./DB/dataBase_Client.js";
+import { dataBase_methods } from "./DB/dataBase_Client.js";
 import { rate_1vs1, Rating } from "ts-trueskill";
 
 const _cache = new Map();

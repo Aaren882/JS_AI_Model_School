@@ -1,8 +1,8 @@
 import Express from "express";
 import bodyParser from "body-parser";
 import { QueryChat } from "./ollamaQuery.js";
-import dbClient from "./dataBase_Client.js";
-import { dataBase_methods } from "./dataBase_Client.js";
+import dbClient from "./DB/dataBase_Client.js";
+import { dataBase_methods } from "./DB/dataBase_Client.js";
 import { Ts_matching_Ratings } from "./ts_validation.js";
 
 const API_router = Express.Router();

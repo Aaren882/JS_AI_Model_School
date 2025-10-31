@@ -1,7 +1,7 @@
 import "dotenv/config";
 import Express from "express";
 import path from "path";
-import { initServerData } from "./functions/dataBase_Client.js";
+import { initServerData } from "./functions/DB/dataBase_Client.js";
 
 import API_router from "./functions/API_Routes.js";
 

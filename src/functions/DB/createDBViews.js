@@ -1,4 +1,4 @@
-import dbClient from "../dataBase_Client.js";
+import dbClient from "../DB/dataBase_Client.js";
 import { Ts_data } from "../ts_validation.js";
 
 //- Prefix "Data_" => 甄選
