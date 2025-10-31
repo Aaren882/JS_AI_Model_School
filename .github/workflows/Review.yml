@@ -37,4 +37,4 @@ jobs:
           file-pattern: "*.*"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           base-branch: "origin/main"
-          model: ${{ secrets.OLLAMA_MODEL }}
+          OLLAMA-MODEL: ${{ secrets.OLLAMA_MODEL }}
