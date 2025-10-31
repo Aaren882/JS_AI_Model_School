@@ -3,6 +3,16 @@ import { Ts_data } from "../ts_validation.js";
 
 //- Prefix "Data_" => 甄選
 async function createDataView(year, query_TableName) {
+  /* 
+    AdmissionVacancies (一般生名額空缺)
+      : max("一般生名額空缺", 0)
+      
+    AdmissionNumber (一般生錄取名額)
+      : "一般生招生名額" - max("一般生名額空缺", 0)
+      
+    TotalAdmissionNumber (一般生招生名額)
+      : "一般生招生名額"
+  */
   const query = {
 		text: `
       SELECT 
@@ -13,6 +23,17 @@ async function createDataView(year, query_TableName) {
         category,
         MIN(posValid) AS posValid,
         MIN(admissionValidity) AS admissionValidity,
+
+        MIN(
+          AdmissionNumber
+        ) AS AdmissionNumber,
+        MIN(
+          AdmissionVacancies
+        ) AS AdmissionVacancies,
+        MIN(
+          TotalAdmissionNumber
+        ) AS TotalAdmissionNumber,
+
         MIN(
           CASE
           WHEN TotalAdmissionNumber = 0 THEN
@@ -21,7 +42,9 @@ async function createDataView(year, query_TableName) {
             AdmissionNumber / TotalAdmissionNumber
           END
         ) AS AdmissionRate,
+
         MIN(r_score) AS r_score,
+
         MIN(
           CASE
           WHEN TotalAdmissionNumber = 0 THEN
@@ -30,6 +53,7 @@ async function createDataView(year, query_TableName) {
             AdmissionVacancies / TotalAdmissionNumber
           END
         ) AS ShiftRatio,
+        
         MIN("avg") AS "avg"
       FROM 
         public."QUERY_${year}_init${process.env.QUERY_POSTFIX}"
@@ -132,14 +156,12 @@ async function createInitView(year, query_TableName) {
             0
           ELSE
             (
-              (
-                cast ("一般生招生名額" AS DOUBLE PRECISION) -
-                LEAST(
-                  cast ("一般生招生名額" AS DOUBLE PRECISION),
-                  GREATEST(
-                    cast ("一般生名額空缺" AS DOUBLE PRECISION),
-                    0
-                  )
+              cast ("一般生招生名額" AS DOUBLE PRECISION) -
+              LEAST(
+                cast ("一般生招生名額" AS DOUBLE PRECISION),
+                GREATEST(
+                  cast ("一般生名額空缺" AS DOUBLE PRECISION),
+                  0
                 )
               )
             )
