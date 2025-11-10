@@ -872,7 +872,7 @@ function renderNetwork(nodes, edges) {
 	const uniqueEdges=Object.entries(edgeCountMap).map(([key,count])=>{
 		const [source,target]=key.split("-->");
 		return {
-			data : { source, target, label: count > 1? `${count} 條` : "1 條" }
+			data : { source, target, label: count > 1? `${count} 條` : `${count} 條` }
 		};
 	});
 	console.log("Unique edges:", uniqueEdges);
@@ -930,7 +930,7 @@ function renderNetwork(nodes, edges) {
 					"source-arrow-color": "#ba2929", //- #NOTE : they're pointing to the winner
 					"source-arrow-shape": "triangle",
 					"curve-style": "bezier",
-					data: "label",
+					label: "data(label)",
 					"font-size": "14px",
 					"text-rotation": "0deg",
 					"text-background-color": "#ffffff",
@@ -1080,7 +1080,7 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 			plugins: {
 				title: {
 					display: true,
-					text: `${currentYear} R-score - 登記入學平均分數`,
+					text: `${currentYear}年 R-score - 登記入學平均分數`,
 				},
 				datalabels: {
 					color: (ctx) => {

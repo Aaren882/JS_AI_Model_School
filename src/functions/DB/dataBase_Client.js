@@ -1,8 +1,8 @@
 import { Pool } from "pg";
-import { QueryViews, QueryAdmissionViews, QueryInitViews } from "./DB/createDBViews.js";
+import { QueryViews, QueryAdmissionViews, QueryInitViews } from "../DB/createDBViews.js";
 import {
 	Ts_matching_Ratings_Array,
-} from "./ts_validation.js";
+} from "../ts_validation.js";
 
 //- Make sure DB is connected
 console.log("Connecting Database...");
