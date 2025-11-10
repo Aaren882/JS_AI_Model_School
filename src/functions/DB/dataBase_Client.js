@@ -130,7 +130,7 @@ export class dataBase_methods {
 				schoolname,
 				min(posvalid) AS posvalid,
 				min(admissionvalidity) AS admissionvalidity,
-				min(Admissionrate) AS Admissionrate,
+				min(admissionrate) AS admissionrate,
 				min(r_score) AS r_score,
 				min(shiftratio) AS shiftratio,
 				min("avg") AS "avg"
@@ -304,7 +304,7 @@ export class dataBase_methods {
 							schoolname,
 							min("posvalid") AS "posvalid",
 							min("admissionvalidity") AS "admissionvalidity",
-							min("Admissionrate") AS "Admissionrate",
+							min("admissionrate") AS "admissionrate",
 							min("r_score") AS "r_score",
 							min("shiftratio") AS "shiftratio",
 							min("avg") AS "AVG"
@@ -329,7 +329,7 @@ export class dataBase_methods {
 							schoolname,
 							"posvalid",
 							"admissionvalidity",
-							"Admissionrate",
+							"admissionrate",
 							"r_score",
 							"shiftratio",
 							"avg"
