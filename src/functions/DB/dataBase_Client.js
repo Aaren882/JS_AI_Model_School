@@ -1,5 +1,5 @@
 import { Pool } from "pg";
-import { QueryViews, QueryAdmissionViews, QueryInitViews } from "../DB/createDBViews.js";
+import { QueryViews, QueryAdmissionViews, QueryInitViews } from "./createDBViews.js";
 import {
 	Ts_matching_Ratings_Array,
 } from "../ts_validation.js";
@@ -128,12 +128,12 @@ export class dataBase_methods {
       SELECT 
 				schoolcode,
 				schoolname,
-				AVG(posvalid) AS posvalid,
-				AVG(admissionvalidity) AS admissionvalidity,
-				AVG(Admissionrate) AS Admissionrate,
-				AVG(r_score) AS r_score,
-				AVG(shiftratio) AS shiftratio,
-				AVG("avg") AS "avg"
+				min(posvalid) AS posvalid,
+				min(admissionvalidity) AS admissionvalidity,
+				min(Admissionrate) AS Admissionrate,
+				min(r_score) AS r_score,
+				min(shiftratio) AS shiftratio,
+				min("avg") AS "avg"
 			FROM public."QUERY_${year_Int}${postfix}"
 			GROUP BY
 				schoolcode,
@@ -302,12 +302,12 @@ export class dataBase_methods {
 						SELECT 
 							schoolcode,
 							schoolname,
-							AVG("posvalid") AS "posvalid",
-							AVG("admissionvalidity") AS "admissionvalidity",
-							AVG("Admissionrate") AS "Admissionrate",
-							AVG("r_score") AS "r_score",
-							AVG("shiftratio") AS "shiftratio",
-							AVG("avg") AS "AVG"
+							min("posvalid") AS "posvalid",
+							min("admissionvalidity") AS "admissionvalidity",
+							min("Admissionrate") AS "Admissionrate",
+							min("r_score") AS "r_score",
+							min("shiftratio") AS "shiftratio",
+							min("avg") AS "AVG"
 						FROM public."QUERY_${year_Int}${postfix}"
 						WHERE "schoolcode" in (
 							\'${res_nodes["nodes"].map((x) => x[0].slice(0, 3)).join("','")}\'
