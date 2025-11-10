@@ -162,8 +162,7 @@ export class dataBase_methods {
 						SELECT
 							winner,
 							loser,
-							array_agg(isdraw) AS results,
-							COUNT (*) AS relationCount
+							array_agg(isdraw) AS results
 						FROM (
 							SELECT
 								SUBSTRING(winner,1,3) AS winner,
@@ -191,8 +190,7 @@ export class dataBase_methods {
 							SELECT
 								winner,
 								loser,
-								array_agg(isdraw),
-								COUNT (*) AS relationCount
+								array_agg(isdraw)
 							FROM public.\"QUERY_${year_Int}_admission${postfix}\"
 							WHERE
 								winner in (\'${stringify}\') OR

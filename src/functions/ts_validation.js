@@ -2,6 +2,9 @@ import dbClient from "./DB/dataBase_Client.js";
 import { dataBase_methods } from "./DB/dataBase_Client.js";
 import { rate_1vs1, Rating } from "ts-trueskill";
 
+/* 
+	#TODO : Clean up, it's too messy (non-used functions)
+*/
 const _cache = new Map();
 class Ts_Rating {
 	constructor(nodes, edges) {
@@ -22,8 +25,8 @@ class Ts_Rating {
 		const cur_nodes = this.edges.filter((x) => x.includes(query_target));
 
 		/* const query_level = 1;
-    for (let index = 0; index < query_level; index++) {
-    } */
+		for (let index = 0; index < query_level; index++) {
+		} */
 		return query_nodes.concat(cur_nodes);
 	}
 }
@@ -92,7 +95,7 @@ class Ts {
 				}
 			}
 		}); */
-		
+
 		return dataBase_methods.getAllMatches_FullDetail(year);
 	}
 
@@ -130,14 +133,14 @@ class Ts {
 		targets : []
 	*/
 	static async targets_matching_Ratings(year = 111, targets = []) {
-		
+
 		const matches = [];
 		const tasks = targets.map((target) =>
 			this.target_matching(year, target, false)
 		);
-		
+
 		for await (const task of tasks) {
-			task.forEach((element) => 
+			task.forEach((element) =>
 				matches.push([...element])
 			);
 		}
@@ -170,11 +173,10 @@ class Ts {
 
 	//- #NOTE : A simple meat grinder
 	static async simple_target_matching_Ratings(year = 111, targets = []) {
-		let edges = targets.map(([winner, loser, , relationCount]) => [winner, loser, relationCount]);
-		let uniqueIDs = [...new Set(edges.flatMap(([winner, loser]) => [winner, loser]))];
+		let edges = targets.map(([winner, loser]) => [winner, loser]).flat();
+		let uniqueIDs = [...new Set(edges)];
 
 		const ratings = new Map(uniqueIDs.map((x) => [x, new Rating()]));
-
 		targets.forEach(([winner, loser, Arr_isDraw]) => {
 
 			Arr_isDraw.forEach((isDraw) => {
@@ -192,7 +194,15 @@ class Ts {
 				const [node, rating] = x;
 				return [node, this.R_score(rating).toFixed(2)];
 			}),
-			edges: edges,
+			edges: targets.map(
+				([winner, loser, Arr_isDraw]) => {
+					[
+						winner, //- "Source"
+						loser,	//- "Target"
+						Arr_isDraw.filter((x) => !x).length.toString() //- "relationCount" (Draws are excluded)
+					]
+				}
+			),
 		};
 	}
 
