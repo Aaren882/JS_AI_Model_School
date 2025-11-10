@@ -864,6 +864,16 @@ function renderNetwork(nodes, edges) {
 	const placeholder = document.querySelector(".placeholder-text");
 	if (placeholder) placeholder.style.display = "block";
 
+	const edgeCountMap = edges.map(([source, target, relationCount])=>{
+		return {
+			data: {
+				source,
+				target,
+				label: `${relationCount} 條`
+			}
+		};
+	});
+
 	cytoscape({
 		container: document.getElementById("network-container"),
 		elements: [
@@ -876,7 +886,7 @@ function renderNetwork(nodes, edges) {
 							`${localizeDept(n[0], ["deptcode", "schoolname", "deptname"])} ${n[1]}`
 				},
 			})),
-			...edges.map((e) => ({ data: { source: e[0], target: e[1] } })),
+			...edgeCountMap,
 		],
 
 		layout: {
@@ -916,6 +926,12 @@ function renderNetwork(nodes, edges) {
 					"source-arrow-color": "#ba2929", //- #NOTE : they're pointing to the winner
 					"source-arrow-shape": "triangle",
 					"curve-style": "bezier",
+					label: "data(label)",
+					"font-size": "14px",
+					"text-rotation": "0deg",
+					"text-background-color": "#ffffff",
+					"text-background-opacity": 0.8,
+					"text-background-padding": "2px",
 				},
 			},
 		],
@@ -1060,7 +1076,7 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 			plugins: {
 				title: {
 					display: true,
-					text: `此比較範圍的 R-score - 該年度分發入學 平均分數`,
+					text: `${currentYear}年 R-score - 登記入學平均分數`,
 				},
 				datalabels: {
 					color: (ctx) => {
