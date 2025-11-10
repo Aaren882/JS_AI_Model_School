@@ -864,15 +864,13 @@ function renderNetwork(nodes, edges) {
 	const placeholder = document.querySelector(".placeholder-text");
 	if (placeholder) placeholder.style.display = "block";
 
-	const edgeCountMap=edges.reduce((acc,[src,tgt])=>{
-		const key=`${src}-->${tgt}`;
-		acc[key]=(acc[key] || 0)+1;
-		return acc;
-	},{});
-	const uniqueEdges=Object.entries(edgeCountMap).map(([key,count])=>{
-		const [source,target]=key.split("-->");
+	const edgeCountMap = edges.map(([source, target, relationCount])=>{
 		return {
-			data : { source, target, label: count > 1? `${count} 條` : `${count} 條` }
+			data: {
+				source,
+				target,
+				label: `${relationCount} 條`
+			}
 		};
 	});
 
@@ -888,7 +886,7 @@ function renderNetwork(nodes, edges) {
 							`${localizeDept(n[0], ["deptcode", "schoolname", "deptname"])} ${n[1]}`
 				},
 			})),
-			...uniqueEdges,
+			...edgeCountMap,
 		],
 
 		layout: {
