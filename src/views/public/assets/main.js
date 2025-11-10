@@ -875,8 +875,6 @@ function renderNetwork(nodes, edges) {
 			data : { source, target, label: count > 1? `${count} 條` : `${count} 條` }
 		};
 	});
-	console.log("Unique edges:", uniqueEdges);
-	console.log("EDGECONT",edgeCountMap);
 
 	cytoscape({
 		container: document.getElementById("network-container"),
