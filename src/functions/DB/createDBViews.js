@@ -168,6 +168,8 @@ async function createInitView(year, query_TableName) {
           END
         ) AS AdmissionNumber,
         cast ("一般生招生名額" AS DOUBLE PRECISION) AS TotalAdmissionNumber,
+        cast ("一般生正取錄取人數" AS DOUBLE PRECISION) AS AcceptanceNumber,
+        cast ("正取總人數" AS DOUBLE PRECISION) AS acceptanceTotalCount,
         GREATEST(
           cast ("一般生名額空缺" AS DOUBLE PRECISION),0
         ) AS AdmissionVacancies,

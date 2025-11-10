@@ -128,6 +128,11 @@ export class dataBase_methods {
       SELECT 
 				schoolcode,
 				schoolname,
+
+				SUM(admissionvacancies) AS AdmissionVacancies,
+				SUM(admissionnumber) AS AdmissionNumber,
+				SUM(totaladmissionnumber) AS TotalAdmissionNumber,
+
 				min(posvalid) AS posvalid,
 				min(admissionvalidity) AS admissionvalidity,
 				min(admissionrate) AS admissionrate,
