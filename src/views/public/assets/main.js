@@ -1046,7 +1046,9 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 					formatter: function (value, ctx) {
 						const index = ctx.dataIndex;
 						const count = CountData[index];
-						return `${count}人\n${value.toFixed(2)}`; // 小數點兩位
+						if(containerId==="chart-line-4")return `${count}\n${value.toFixed(2)}`; // 小數點兩位
+						return `${count}人\n${value.toFixed(2)}`;
+						
 					},
 					font: { size: 10 },
 				},
