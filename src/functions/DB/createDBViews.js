@@ -56,7 +56,7 @@ async function createDataView(year, query_TableName) {
         
         MIN("avg") AS "avg"
       FROM 
-        public."QUERY_${year}_init${process.env.QUERY_POSTFIX}"
+        public."QUERY_${year}_init${process.env.QUERY_POSTFIX || ""}"
     GROUP BY 
       schoolCode,
       schoolName,
