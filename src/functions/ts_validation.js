@@ -170,8 +170,8 @@ class Ts {
 
 	//- #NOTE : A simple meat grinder
 	static async simple_target_matching_Ratings(year = 111, targets = []) {
-		let edges = targets.map((x) => x.slice(0, 2));
-		let uniqueIDs = [...new Set(edges.flat())];
+		let edges = targets.map(([winner, loser, , relationCount]) => [winner, loser, relationCount]);
+		let uniqueIDs = [...new Set(edges.flatMap(([winner, loser]) => [winner, loser]))];
 
 		const ratings = new Map(uniqueIDs.map((x) => [x, new Rating()]));
 
