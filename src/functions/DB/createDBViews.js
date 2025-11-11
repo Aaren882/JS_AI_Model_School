@@ -75,6 +75,9 @@ async function createDataView(year, query_TableName) {
     `,
 	};
 
+  //- create view table
+  await dbClient.query(create);
+
 	const [query_data, ts_data] = await Promise.all([
 		dbClient.query(query),
 		Ts_data(year),
@@ -126,9 +129,6 @@ async function createDataView(year, query_TableName) {
 			dbClient.query(x)
 		})
 	);
-
-	//- create view table
-	await dbClient.query(create);
 }
 
 //- Prefix "QUERY_Init_" => 輕量整理後的初始資料

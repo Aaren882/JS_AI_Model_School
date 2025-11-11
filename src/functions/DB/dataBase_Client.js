@@ -63,6 +63,7 @@ export class dataBase_methods {
 		const INIT_List = [
 			"init",
 			"admission",
+			"",
 			"competition_school",
 			"competition_department",
 			""
