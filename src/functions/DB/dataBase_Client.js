@@ -77,8 +77,11 @@ export class dataBase_methods {
 		];
 
 		//- #NOTE : Asynchronous matters, tables are dependence
-		INIT_List.forEach(async (x) => 
-			this.initCreateDatabase(year, x)
+		for (const x of INIT_List) {
+			await this.initCreateDatabase(year, x);
+		}
+		console.log(
+			`\x1b[32m✅ - All \"${year}\" VIEW Tables has been checked !!\x1b[0m \n`
 		);
 	}
 	static async initCreateDatabase(year = 111, TableName = "") {
@@ -134,10 +137,6 @@ export class dataBase_methods {
 			};
 		} catch (err) {
 			console.error(err);
-		} finally {
-			console.log(
-				`\x1b[32m✅ - All \"${year}\" VIEW Tables has been checked !!\x1b[0m \n`
-			);
 		}
 	}
 
