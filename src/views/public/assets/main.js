@@ -11,6 +11,7 @@ let selectedUniversity = null;
 
 let universityData = {};
 let originalUniversityData = {};
+let originalUniversityDepartmentData = {};
 let originalUniversitySumData = {};
 
 let currentYear = "111"; // 預設年份
@@ -45,11 +46,12 @@ async function loadSchoolData(year = "111") {
 		}
 
 		//- Update school data
-		let { SchoolData, SchoolSum } = await response.json();
-		originalUniversitySumData = SchoolSum;
-		originalUniversityData = SchoolData;
+		let { GroupData, departmentData, SchoolData } = await response.json();
+		originalUniversityData = GroupData;
+		originalUniversityDepartmentData = departmentData;
+		originalUniversitySumData = SchoolData;
 
-		return parseSchoolData(SchoolData);
+		return parseSchoolData(GroupData);
 	} catch (error) {
 		console.error(`無法讀取 ${year} 年的資料`, error);
 		return {};
@@ -427,7 +429,7 @@ function initializeYearSelects() {
 async function initializeData() {
 	try {
 		universityData = await loadSchoolData(currentYear);
-
+		console.log(universityData);
 		if (Object.keys(universityData).length === 0) {
 			universityList.innerHTML =
 				'<li style="padding: 10px; color: #666;">無法載入資料，請確認CSV檔案已上傳</li>';
@@ -950,13 +952,50 @@ function safeDraw(containerId, chartConfig) {
 }
 function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 	nodes = nodes.map((x) => x[0]);
+	let selectkey="";
+	const CountData = nodes.map((d) => { //- Formatting labels
+		//- Separate format for "school"
+		if (currentDisplayMode === "school") {
+			switch(containerId){
+				case "chart-line-1":
+					selectkey="admissionnumber";
+					break;
+				case "chart-line-3":
+					selectkey="admissionvacancies";
+					break;
+				case "chart-line-4":
+					selectkey="acceptancenumber";	
+					// AcceptanceNumber
+					break;
+			}
+			const result = dataParser(d, ["schoolname", "schoolcode",selectkey]);
+			
+			return result[2];
+		} else {
+			switch(containerId){
+				case "chart-line-1":
+					selectkey="admissionnumber";
+					break;
+				case "chart-line-3":
+					selectkey="admissionvacancies";
+					break;
+				case "chart-line-4":
+					selectkey="acceptancenumber";	
+					// AcceptanceNumber
+					break;
+			}
+			//- rest of the format
+			const result = dataParser(d, ["schoolname", selectkey]);
+	
+			return result[1];
+		}
+	});
 	const values = nodes.map((d) => parseFloat(localizeDept(d, [dataKey])));
 	const labels = nodes.map((d) => { //- Formatting labels
-
 		//- Separate format for "school"
 		if (currentDisplayMode === "school") {
 			const [schoolname, schoolcode] = dataParser(d, ["schoolname", "schoolcode"]);
-
+			
 			return `${schoolcode} - ${schoolname}`;
 		} else {
 			
@@ -994,8 +1033,11 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 				datalabels: {
 					color: "#000",
 					align: "top",
-					formatter: function (value) {
-						return `${value.toFixed(2)}`; // 小數點兩位
+					formatter: function (value, ctx) {
+						const index = ctx.dataIndex;
+						const count = CountData[index];
+						return `${count}人\n${value.toFixed(2)}`; // 小數點兩位
+						
 					},
 					font: { size: 10 },
 				},
@@ -1076,7 +1118,7 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 			plugins: {
 				title: {
 					display: true,
-					text: `${currentYear}年 R-score - 登記入學平均分數`,
+					text: `${currentYear}年 R-score - 最低平均分數`,
 				},
 				datalabels: {
 					color: (ctx) => {
@@ -1153,8 +1195,9 @@ function CalcRanks(values){
 }
 
 function iLB() {
-	const containers = document.querySelectorAll(".image-container.medium");
+	const containers = document.querySelectorAll(".image-container");
 	const lightbox = document.getElementById("lightbox");
+	const RDnetwork = document.getElementById("network-container");
 	const LBcontent = document.getElementById("lightbox-content");
 	const MC = document.querySelector(".main-content");
 	let ACTcontainer = null;
@@ -1171,7 +1214,9 @@ function iLB() {
 				nS = container.nextSibling;
 				container.parentNode.insertBefore(dummy, nS);
 				lightbox.style.display = "block";
+				container.style.height = "100%";
 				LBcontent.innerHTML = "";
+				RDnetwork.style.height = "100%";
 				LBcontent.appendChild(container);
 			}
 		});
@@ -1179,6 +1224,8 @@ function iLB() {
 	lightbox.addEventListener("click", function (e) {
 		if (e.target == lightbox) {
 			dummy.style.display = "none";
+			RDnetwork.style.height = "85%";
+			ACTcontainer.style.height = "320px";
 			MC.insertBefore(ACTcontainer, dummy);
 			lightbox.style.display = "none";
 			LBcontent.innerHTML = "";

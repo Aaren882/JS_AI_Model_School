@@ -3,6 +3,37 @@ import { dataBase_methods } from "./DB/dataBase_Client.js";
 import { rate_1vs1, Rating } from "ts-trueskill";
 
 const _cache = new Map();
+const _cache_Rating = new Map();
+const postfix = process.env.QUERY_POSTFIX || "";
+
+export async function Ts_data(year = 111) {
+	try {
+		if (_cache_Rating.has(year))
+			return _cache_Rating.get(year);
+
+		//- Create new an object
+		let [node_ids, edges] = await Ts.createQuery(year);
+		const nodes = new Map(node_ids.map((x) => [x, new Rating()]));
+
+		edges.forEach((x) => {
+			const [winner, loser, isDraw] = x;
+			const [newP1, newP2] = Ts.rate(
+				[nodes.get(winner), nodes.get(loser)],
+				isDraw
+			);
+			nodes.set(winner, newP1);
+			nodes.set(loser, newP2);
+		});
+
+		let result = new Ts_Rating(nodes, edges);
+		_cache_Rating.set(year, result); //- Save into cache
+
+		return result;
+	} catch (error) {
+		console.error(error);
+	}
+}
+
 class Ts_Rating {
 	constructor(nodes, edges) {
 		this.nodes = nodes;
@@ -26,6 +57,7 @@ class Ts_Rating {
     } */
 		return query_nodes.concat(cur_nodes);
 	}
+	
 }
 
 class Ts {
@@ -169,6 +201,7 @@ class Ts {
 	}
 
 	//- #NOTE : A simple meat grinder
+	//* #TODO : Need to arrange in descending order
 	static async simple_target_matching_Ratings(year = 111, targets = []) {
 		let edges = targets.map(([winner, loser, , relationCount]) => [winner, loser, relationCount]);
 		let uniqueIDs = [...new Set(edges.flatMap(([winner, loser]) => [winner, loser]))];
@@ -192,6 +225,52 @@ class Ts {
 				const [node, rating] = x;
 				return [node, this.R_score(rating).toFixed(2)];
 			}),
+			edges: edges,
+		};
+	}
+	//- #NOTE : Annual 
+	static async query_target_matching_Ratings(year = 111, targets = [], mode = "") {
+		let edges = targets.map(([winner, loser, , relationCount]) => [winner, loser, relationCount]);
+		let uniqueIDs = [...new Set(edges.flatMap(([winner, loser]) => [winner, loser]))].join("','");
+		
+		let text;
+		switch (mode) {
+			case "school":
+				text = `
+					SELECT 
+						schoolcode,
+						r_score
+					FROM public."QUERY_${year}_R_table_school${postfix}"
+					WHERE schoolcode in (\'${uniqueIDs}\')
+				`;
+				break;
+			case "department":
+				text = `
+					SELECT
+						FORMAT('%s-%s',schoolcode, deptname),
+						r_score
+					FROM public."QUERY_${year}_R_table_department${postfix}"
+					WHERE
+						FORMAT('%s-%s',schoolcode, deptname) IN (\'${uniqueIDs}\')
+				`;
+				break;
+			default:
+				text = `
+					SELECT 
+						DISTINCT deptcode,
+						r_score
+					FROM public."QUERY_${year}${postfix}"
+					WHERE deptcode in (\'${uniqueIDs}\')
+				`;
+				break;
+		}
+		const { rows } = await dbClient.query({
+			text,
+			rowMode: 'array'
+		});
+		
+		return {
+			nodes: rows.map(([node, r_score]) => [node, parseFloat(r_score).toFixed(2)]),
 			edges: edges,
 		};
 	}
@@ -234,25 +313,6 @@ export function Ts_matching_Ratings(year = 111, query_target) {
 export function Ts_matching_Ratings_Array(year = 111, query_target) {
 	return Ts.simple_target_matching_Ratings(year, query_target);
 };
-
-export async function Ts_data(year = 111) {
-	try {
-		let [node_ids, edges] = await Ts.createQuery(year);
-
-		const nodes = new Map(node_ids.map((x) => [x, new Rating()]));
-
-		edges.forEach((x) => {
-			const [winner, loser, isDraw] = x;
-			const [newP1, newP2] = Ts.rate(
-				[nodes.get(winner), nodes.get(loser)],
-				isDraw
-			);
-			nodes.set(winner, newP1);
-			nodes.set(loser, newP2);
-		});
-
-		return new Ts_Rating(nodes, edges);
-	} catch (error) {
-		console.error(error);
-	}
-}
+export function Ts_matching_Ratings_Query(year = 111, query_target, mode) {
+	return Ts.query_target_matching_Ratings(year, query_target, mode);
+};

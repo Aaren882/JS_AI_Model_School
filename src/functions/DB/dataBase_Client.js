@@ -1,7 +1,21 @@
 import { Pool } from "pg";
-import { QueryViews, QueryAdmissionViews, QueryInitViews } from "./createDBViews.js";
+import {
+	QueryAdmissionViews,
+	QueryInitViews,
+
+	QueryViews,
+	QueryViews_School,
+	QueryViews_Department,
+
+	QueryCompetitionViews_School,
+	QueryCompetitionViews_Department,
+
+	Query_R_table_School,
+	Query_R_table_Department,
+} from "./createDBViews.js";
 import {
 	Ts_matching_Ratings_Array,
+	Ts_matching_Ratings_Query
 } from "../ts_validation.js";
 
 //- Make sure DB is connected
@@ -22,7 +36,7 @@ if (!dbClient) {
 		host: process.env.DB_IP,
 		user: "postgres",
 		password: process.env.DB_PW,
-		database: "School_Test",
+		database: process.env.DB_DATABASE || "School_Test",
 		port: process.env.DB_PORT,
 	});
 
@@ -53,11 +67,29 @@ export function initServerData(years = []) {
 export class dataBase_methods {
 	static async initDatabase(year = 111) {
 		
-		const INIT_List = ["init", "admission", ""];
+		const INIT_List = [
+			"init",
+			"admission",
+			"",
+
+			"competition_school",
+			"competition_department",
+			
+			//- R-Tables
+			"R_table_school",
+			"R_table_department",
+
+			//- Summarized data (schools, departments...)
+			"school",
+			"department",
+		];
 
 		//- #NOTE : Asynchronous matters, tables are dependence
-		INIT_List.forEach(async (x) => 
-			this.initCreateDatabase(year, x)
+		for (const x of INIT_List) {
+			await this.initCreateDatabase(year, x);
+		}
+		console.log(
+			`\x1b[32m✅ - All \"${year}\" VIEW Tables has been checked !!\x1b[0m \n`
 		);
 	}
 	static async initCreateDatabase(year = 111, TableName = "") {
@@ -83,13 +115,33 @@ export class dataBase_methods {
 
 			if (res.rows[0] != 1) {
 				switch (TableName) {
-					case "admission":
-						await QueryAdmissionViews(year, query_TableName);
-						break;
 					case "init": //- Initial computation Data
 						await QueryInitViews(year, query_TableName);
 						break;
-				
+					case "admission":
+						await QueryAdmissionViews(year, query_TableName);
+						break;
+					case "competition_school": //- Competition for schools
+						await QueryCompetitionViews_School(year, query_TableName);
+						break;
+					case "competition_department": //- R-scores for departments
+						await QueryCompetitionViews_Department(year, query_TableName);
+						break;
+
+					case "R_table_school": //- R-scores for schools
+						await Query_R_table_School(year, query_TableName);
+						break;
+					case "R_table_department": //- R-scores for departments
+						await Query_R_table_Department(year, query_TableName);
+						break;
+
+					//- Summarized Tables
+					case "school":
+						await QueryViews_School(year, query_TableName);
+						break;
+					case "department":
+						await QueryViews_Department(year, query_TableName);
+						break;
 					default:
 						await QueryViews(year, query_TableName);
 						break;
@@ -97,20 +149,17 @@ export class dataBase_methods {
 				console.log(
 					`  ✅\x1b[32m-- Successfully create \"${query_TableName}\" view.👁️\x1b[0m`
 				);
+				await new Promise((resolve) => setTimeout(resolve, 500));
 			};
 		} catch (err) {
 			console.error(err);
-		} finally {
-			console.log(
-				`\x1b[32m✅ - All \"${year}\" VIEW Tables has been checked !!\x1b[0m \n`
-			);
 		}
 	}
 
 	/* 
     Query from view tables for better performance
   */
-	static async getAllSchool(year_Int = -1) {
+	static async getAllGroup(year_Int = -1) {
 		const query = `
       SELECT *
       FROM public."QUERY_${year_Int}${postfix}"
@@ -123,21 +172,23 @@ export class dataBase_methods {
 			console.error(err.message);
 		}
 	}
-	static async getAllSumSchool(year_Int = -1) {
+	static async getAllDepartment(year_Int = -1) {
 		const query = `
-      SELECT 
-				schoolcode,
-				schoolname,
-				min(posvalid) AS posvalid,
-				min(admissionvalidity) AS admissionvalidity,
-				min(admissionrate) AS admissionrate,
-				min(r_score) AS r_score,
-				min(shiftratio) AS shiftratio,
-				min("avg") AS "avg"
-			FROM public."QUERY_${year_Int}${postfix}"
-			GROUP BY
-				schoolcode,
-				schoolname
+      SELECT *
+			FROM public."QUERY_${year_Int}_department${postfix}"
+    `;
+
+		try {
+			let res = await dbClient.query(query);
+			return res.rows;
+		} catch (err) {
+			console.error(err.message);
+		}
+	}
+	static async getAllSchool(year_Int = -1) {
+		const query = `
+      SELECT *
+			FROM public."QUERY_${year_Int}_school${postfix}"
     `;
 
 		try {
@@ -148,7 +199,7 @@ export class dataBase_methods {
 		}
 	}
 
-	static async getRelationData(bodyData) {
+	static async getRelationData_Local(bodyData) {
 		const { year = "", mode, departmentCodes, universityCode } = bodyData;
 		const year_Int = parseInt(year);
 
@@ -208,6 +259,72 @@ export class dataBase_methods {
 			const res_nodes = await dbClient.query(query);
 			return Ts_matching_Ratings_Array(year_Int, res_nodes.rows);
 
+		} catch (err) {
+			console.error(err);
+		}
+	}
+	static async getRelationData(bodyData) {
+		const { year = "", mode, departmentCodes, universityCode, departmentName } = bodyData;
+		const year_Int = parseInt(year);
+
+		let query, stringify='';
+		try {
+			switch (mode) {
+				case "school":
+					//- getAllRelations for each department
+					query = {
+						text: `
+							SELECT *
+							FROM public.\"QUERY_${year}_competition_school${postfix}\"
+							WHERE
+								winner = '${universityCode}' OR
+								loser = '${universityCode}'
+						`,
+						rowMode: "array",
+					};
+					break;
+				
+				case "department":
+					stringify = [universityCode, departmentName].join("-");
+					query = {
+						text: `
+						SELECT
+								winner,
+								loser,
+								results,
+								relationcount
+							FROM public.\"QUERY_${year_Int}_competition_department${postfix}\"
+							WHERE
+								winner = \'${stringify}\' OR
+								loser = \'${stringify}\'
+						`,
+						rowMode: "array",
+					};
+					break;
+				
+				default:
+					stringify = departmentCodes.join("','");
+					query = {
+						text: `
+							SELECT
+								winner,
+								loser,
+								array_agg(isdraw),
+								COUNT (*) AS relationCount
+							FROM public.\"QUERY_${year_Int}_admission${postfix}\"
+							WHERE
+								winner in (\'${stringify}\') OR
+								loser in (\'${stringify}\')
+							GROUP BY
+								winner,
+								loser
+						`,
+						rowMode: "array",
+					};
+					break;
+			}
+			const { rows } = await dbClient.query(query);
+			return Ts_matching_Ratings_Query(year_Int, rows, mode);
 		} catch (err) {
 			console.error(err);
 		}
@@ -437,4 +554,21 @@ export class dataBase_methods {
 			console.error(err.message);
 		}
 	}
+	//- This only outputs arrays of "[winner<STRING>, loser<STRING>, isDraw<BOOL[]>]"
+	/* static async getAllMatches_School(year_Int = -1) {
+		const query = {
+			text: `
+				SELECT *
+				FROM public."QUERY_${year_Int}_competition_school${postfix}"
+			`,
+			rowMode: "array",
+		};
+
+		try {
+			let res = await dbClient.query(query);
+			return res.rows;
+		} catch (err) {
+			console.error(err.message);
+		}
+	} */
 }

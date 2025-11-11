@@ -499,6 +499,12 @@ body::before {
     grid-template-columns: 20% 80%;
     grid-column: 1 / -1;
 }
+network-container{
+    height: 320px;
+}
+#network-container{
+    height: 100%;
+}
 
 .image-container.medium {
     min-height: 400px;
@@ -540,7 +546,8 @@ canvas{
     color: #fff;
     text-align: left;
     font-size: 1.05rem;
-    min-width: 170%;
+    min-width: 200%;
+    max-width: 220%;
     border: 20px;
     padding: 5px 10px;
     z-index: 112;

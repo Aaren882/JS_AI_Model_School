@@ -22,11 +22,18 @@ API_router.get("/getAllSchool", async (req, res) => {
 		return;
 	}
 
+	let [GroupData, departmentData, SchoolData] = await Promise.all([
+		dataBase_methods.getAllGroup(year_Int),
+		dataBase_methods.getAllDepartment(year_Int),
+		dataBase_methods.getAllSchool(year_Int),
+	]);
+	
 	try {
 		//- Responses
 		res.status(200).json({
-			SchoolData: await dataBase_methods.getAllSchool(year_Int),
-			SchoolSum: await dataBase_methods.getAllSumSchool(year_Int)
+			GroupData,
+			departmentData,
+			SchoolData
 		});
 	} catch (err) {
 		res.status(404).send("404 Error no data.");
