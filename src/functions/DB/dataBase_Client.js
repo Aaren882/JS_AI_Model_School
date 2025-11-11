@@ -1,10 +1,14 @@
 import { Pool } from "pg";
 import {
-	QueryViews,
 	QueryAdmissionViews,
 	QueryInitViews,
+
+	QueryViews,
+	QueryViews_School,
+	QueryViews_Department,
+
 	QueryCompetitionViews_School,
-	QueryCompetitionViews_Group
+	QueryCompetitionViews_Department,
 } from "./createDBViews.js";
 import {
 	Ts_matching_Ratings_Array,
@@ -66,7 +70,10 @@ export class dataBase_methods {
 			"",
 			"competition_school",
 			"competition_department",
-			""
+			
+			//- Summarized data (schools, departments...)
+			"school",
+			"department",
 		];
 
 		//- #NOTE : Asynchronous matters, tables are dependence
@@ -107,9 +114,16 @@ export class dataBase_methods {
 						await QueryCompetitionViews_School(year, query_TableName);
 						break;
 					case "competition_department": //- R-scores for group
-						await QueryCompetitionViews_Group(year, query_TableName);
+						await QueryCompetitionViews_Department(year, query_TableName);
 						break;
-				
+
+					//- Summarized Tables
+					case "school":
+						await QueryViews_School(year, query_TableName);
+						break;
+					case "department":
+						await QueryViews_Department(year, query_TableName);
+						break;
 					default:
 						await QueryViews(year, query_TableName);
 						break;
@@ -130,7 +144,7 @@ export class dataBase_methods {
 	/* 
     Query from view tables for better performance
   */
-	static async getAllSchool(year_Int = -1) {
+	static async getAllGroup(year_Int = -1) {
 		const query = `
       SELECT *
       FROM public."QUERY_${year_Int}${postfix}"
@@ -143,26 +157,23 @@ export class dataBase_methods {
 			console.error(err.message);
 		}
 	}
-	static async getAllSumSchool(year_Int = -1) {
+	static async getAllDepartment(year_Int = -1) {
 		const query = `
-      SELECT 
-				schoolcode,
-				schoolname,
+      SELECT *
+			FROM public."QUERY_${year_Int}_department${postfix}"
+    `;
 
-				SUM(admissionvacancies) AS AdmissionVacancies,
-				SUM(admissionnumber) AS AdmissionNumber,
-				SUM(totaladmissionnumber) AS TotalAdmissionNumber,
-
-				min(posvalid) AS posvalid,
-				min(admissionvalidity) AS admissionvalidity,
-				min(admissionrate) AS admissionrate,
-				min(r_score) AS r_score,
-				min(shiftratio) AS shiftratio,
-				min("avg") AS "avg"
-			FROM public."QUERY_${year_Int}${postfix}"
-			GROUP BY
-				schoolcode,
-				schoolname
+		try {
+			let res = await dbClient.query(query);
+			return res.rows;
+		} catch (err) {
+			console.error(err.message);
+		}
+	}
+	static async getAllSchool(year_Int = -1) {
+		const query = `
+      SELECT *
+			FROM public."QUERY_${year_Int}_school${postfix}"
     `;
 
 		try {

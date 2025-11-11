@@ -11,6 +11,7 @@ let selectedUniversity = null;
 
 let universityData = {};
 let originalUniversityData = {};
+let originalUniversityDepartmentData = {};
 let originalUniversitySumData = {};
 
 let currentYear = "111"; // 預設年份
@@ -45,11 +46,12 @@ async function loadSchoolData(year = "111") {
 		}
 
 		//- Update school data
-		let { SchoolData, SchoolSum } = await response.json();
-		originalUniversitySumData = SchoolSum;
-		originalUniversityData = SchoolData;
+		let { GroupData, departmentData, SchoolData } = await response.json();
+		originalUniversityData = GroupData;
+		originalUniversityDepartmentData = departmentData;
+		originalUniversitySumData = SchoolData;
 
-		return parseSchoolData(SchoolData);
+		return parseSchoolData(GroupData);
 	} catch (error) {
 		console.error(`無法讀取 ${year} 年的資料`, error);
 		return {};

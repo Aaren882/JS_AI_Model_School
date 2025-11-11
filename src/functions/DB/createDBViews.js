@@ -16,54 +16,48 @@ async function createDataView(year, query_TableName) {
   */
   const query = {
 		text: `
-      SELECT 
+      SELECT
         schoolCode,
         schoolName,
         deptCode,
         deptName,
         category,
-        MIN(posValid) AS posValid,
-        MIN(admissionValidity) AS admissionValidity,
+        
+        AdmissionVacancies,
 
-        MIN(
-          AdmissionNumber
-        ) AS AdmissionNumber,
-        MIN(
-          AdmissionVacancies
-        ) AS AdmissionVacancies,
-        MIN(
-          TotalAdmissionNumber
-        ) AS TotalAdmissionNumber,
+        AcceptanceNumber,
+        TotalAcceptanceNumber,
 
-        MIN(
-          CASE
+        AdmissionNumber,
+        TotalAdmissionNumber,
+
+        CASE
+          WHEN TotalAcceptanceNumber = 0 THEN
+            0
+          ELSE
+            AcceptanceNumber / TotalAcceptanceNumber
+          END AS posValid,
+
+        CASE
           WHEN TotalAdmissionNumber = 0 THEN
             0
           ELSE
             AdmissionNumber / TotalAdmissionNumber
-          END
-        ) AS AdmissionRate,
+          END AS AdmissionRate,
 
-        MIN(r_score) AS r_score,
-
-        MIN(
-          CASE
+        CASE
           WHEN TotalAdmissionNumber = 0 THEN
             0
           ELSE
             AdmissionVacancies / TotalAdmissionNumber
-          END
-        ) AS ShiftRatio,
+          END AS ShiftRatio,
         
-        MIN("avg") AS "avg"
-      FROM 
+        admissionValidity AS admissionValidity,
+        r_score AS r_score,
+        "avg" AS "avg"
+        
+        FROM
         public."QUERY_${year}_init${postfix}"
-    GROUP BY 
-      schoolCode,
-      schoolName,
-      deptCode,
-      deptName,
-      category
     `,
 	};
   
@@ -131,6 +125,145 @@ async function createDataView(year, query_TableName) {
 	);
 }
 
+async function createDataView_School(year, query_TableName) {
+  const query = {
+    text: `
+      SELECT
+        SC.*,
+        TG.r_score
+      FROM
+      (
+        SELECT
+          schoolCode,
+          schoolName,
+
+          SUM(AdmissionVacancies) AS AdmissionVacancies,
+
+          SUM(AcceptanceNumber) AS AcceptanceNumber,
+          SUM(TotalAcceptanceNumber) AS TotalAcceptanceNumber,
+
+          SUM(AdmissionNumber) AS AdmissionNumber,
+          SUM(TotalAdmissionNumber) AS TotalAdmissionNumber,
+
+          CASE
+            WHEN SUM(TotalAcceptanceNumber) = 0 THEN
+            0
+            ELSE
+            SUM(AcceptanceNumber) / SUM(TotalAcceptanceNumber)
+            END AS posValid,
+
+          CASE
+            WHEN SUM(TotalAdmissionNumber) = 0 THEN
+            0
+            ELSE
+            SUM(AdmissionNumber) / SUM(TotalAdmissionNumber)
+            END AS AdmissionRate,
+
+
+          CASE
+            WHEN SUM(TotalAdmissionNumber) = 0 THEN
+            0
+            ELSE
+            SUM(AdmissionVacancies) / SUM(TotalAdmissionNumber)
+            END AS ShiftRatio,
+          
+          MIN("avg") AS "avg"
+        FROM public."QUERY_111_init_DEV"
+        GROUP BY
+          schoolCode,
+          schoolName
+      ) SC
+      JOIN
+        public."QUERY_${year}_competition_school${postfix}" TG
+      ON SC.schoolcode = TG.schoolcode
+    `,
+  };
+
+  const create = {
+    name: `create-${query_TableName}_VIEW_Table`,
+    text: `
+      CREATE MATERIALIZED VIEW "${query_TableName}" AS
+        ${query.text}
+    `,
+  };
+
+  //- create view table
+  await dbClient.query(create);
+}
+
+async function createDataView_Department(year, query_TableName) {
+  const query = {
+    text: `
+      SELECT
+        SC.*,
+        TG.r_score
+      FROM
+      (
+        (
+          SELECT
+            schoolCode,
+            schoolName,
+            deptname,
+            array_agg(deptcode) AS deptcodes,
+            array_agg(category) AS categories,
+
+            SUM(AdmissionVacancies) AS AdmissionVacancies,
+
+            SUM(AcceptanceNumber) AS AcceptanceNumber,
+            SUM(TotalAcceptanceNumber) AS TotalAcceptanceNumber,
+
+            SUM(AdmissionNumber) AS AdmissionNumber,
+            SUM(TotalAdmissionNumber) AS TotalAdmissionNumber,
+
+            CASE
+              WHEN SUM(TotalAcceptanceNumber) = 0 THEN
+              0
+              ELSE
+              SUM(AcceptanceNumber) / SUM(TotalAcceptanceNumber)
+              END AS posValid,
+
+            CASE
+              WHEN SUM(TotalAdmissionNumber) = 0 THEN
+              0
+              ELSE
+              SUM(AdmissionNumber) / SUM(TotalAdmissionNumber)
+              END AS AdmissionRate,
+
+              CASE
+              WHEN SUM(TotalAdmissionNumber) = 0 THEN
+              0
+              ELSE
+              SUM(AdmissionVacancies) / SUM(TotalAdmissionNumber)
+              END AS ShiftRatio,
+
+            MIN("avg") AS "avg"
+          FROM public."QUERY_${year}_init${postfix}"
+          GROUP BY
+            schoolCode,
+            schoolName,
+            deptname
+        ) SC
+        JOIN
+          public."QUERY_${year}_competition_department${postfix}" TG
+        ON 
+          SC.schoolcode = TG.schoolcode AND
+          SC.deptname = TG.deptname
+      )
+    `,
+  };
+
+  const create = {
+    name: `create-${query_TableName}_VIEW_Table`,
+    text: `
+      CREATE MATERIALIZED VIEW "${query_TableName}" AS
+        ${query.text}
+    `,
+  };
+
+  //- create view table
+  await dbClient.query(create);
+}
+
 //- Prefix "QUERY_Init_" => 輕量整理後的初始資料
 async function createInitView(year, query_TableName) {
 
@@ -170,7 +303,7 @@ async function createInitView(year, query_TableName) {
         ) AS AdmissionNumber,
         cast ("一般生招生名額" AS DOUBLE PRECISION) AS TotalAdmissionNumber,
         cast ("一般生正取錄取人數" AS DOUBLE PRECISION) AS AcceptanceNumber,
-        cast ("正取總人數" AS DOUBLE PRECISION) AS acceptanceTotalCount,
+        cast ("正取總人數" AS DOUBLE PRECISION) AS TotalAcceptanceNumber,
         GREATEST(
           cast ("一般生名額空缺" AS DOUBLE PRECISION),0
         ) AS AdmissionVacancies,
@@ -328,7 +461,7 @@ async function createCompetitionViews_School(year, query_TableName) {
   //- create view table
   await dbClient.query(create);
 }
-async function createCompetitionViews_Group(year, query_TableName) {
+async function createCompetitionViews_Department(year, query_TableName) {
   const query = {
     text: `
       SELECT
@@ -388,7 +521,10 @@ async function createCompetitionViews_Group(year, query_TableName) {
 
   const query_data = await dbClient.query(query);
   const TS = await Ts_matching_Ratings_Array(year, query_data.rows);
-  const R_scores = TS.nodes.map(([schoolCode, score]) => `(\'${schoolCode}\', ${score})`)
+  const R_scores = TS.nodes.map(([deptCode, score]) => {
+    let [schoolCode, deptName] = deptCode.split('-');
+    return `(\'${schoolCode}\', \'${deptName}\', ${score})`;
+  })
     .join(",");
 
   const create = {
@@ -397,10 +533,11 @@ async function createCompetitionViews_Group(year, query_TableName) {
       CREATE MATERIALIZED VIEW "${query_TableName}" AS
         SELECT
           cast ("schoolcode" AS text),
+          cast ("deptname" AS text),
           cast ("r_score" AS text)
         FROM (VALUES
           ${R_scores}
-        ) AS new_data(schoolcode, r_score)
+        ) AS new_data(schoolcode, deptname, r_score)
     `,
   };
 
@@ -457,16 +594,23 @@ async function createDistrView(year) {
 export function QueryInitViews(year, query_TableName) {
   return createInitView(year, query_TableName);
 }
-export function QueryViews(year, query_TableName) {
-  return createDataView(year, query_TableName);
-}
-
 export function QueryAdmissionViews(year, query_TableName) {
   return createAdmissionView(year, query_TableName);
 }
+
+export function QueryViews(year, query_TableName) {
+  return createDataView(year, query_TableName);
+}
+export function QueryViews_School(year, query_TableName) {
+  return createDataView_School(year, query_TableName);
+}
+export function QueryViews_Department(year, query_TableName) {
+  return createDataView_Department(year, query_TableName);
+}
+
 export function QueryCompetitionViews_School(year, query_TableName) {
   return createCompetitionViews_School(year, query_TableName);
 }
-export function QueryCompetitionViews_Group(year, query_TableName) {
-  return createCompetitionViews_Group(year, query_TableName);
+export function QueryCompetitionViews_Department(year, query_TableName) {
+  return createCompetitionViews_Department(year, query_TableName);
 }
