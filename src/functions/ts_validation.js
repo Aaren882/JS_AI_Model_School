@@ -237,21 +237,27 @@ class Ts {
 		switch (mode) {
 			case "school":
 				text = `
-					SELECT *
-					FROM public."QUERY_${year}_competition_${mode}${postfix}"
+					SELECT 
+						schoolcode,
+						r_score
+					FROM public."QUERY_${year}_R_table_school${postfix}"
 					WHERE schoolcode in (\'${uniqueIDs}\')
 				`;
 				break;
 			case "department":
 				text = `
-					SELECT *
-					FROM public."QUERY_${year}_competition_${mode}${postfix}"
+					SELECT
+						FORMAT('%s-%s',schoolcode, deptname),
+						r_score
+					FROM public."QUERY_${year}_R_table_department${postfix}"
+					WHERE
+						FORMAT('%s-%s',schoolcode, deptname) IN (\'${uniqueIDs}\')
 				`;
 				break;
 			default:
 				text = `
 					SELECT 
-						deptcode,
+						DISTINCT deptcode,
 						r_score
 					FROM public."QUERY_${year}${postfix}"
 					WHERE deptcode in (\'${uniqueIDs}\')

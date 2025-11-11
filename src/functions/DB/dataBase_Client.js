@@ -9,6 +9,9 @@ import {
 
 	QueryCompetitionViews_School,
 	QueryCompetitionViews_Department,
+
+	Query_R_table_School,
+	Query_R_table_Department,
 } from "./createDBViews.js";
 import {
 	Ts_matching_Ratings_Array,
@@ -33,7 +36,7 @@ if (!dbClient) {
 		host: process.env.DB_IP,
 		user: "postgres",
 		password: process.env.DB_PW,
-		database: "School_Test",
+		database: process.env.DB_DATABASE || "School_Test",
 		port: process.env.DB_PORT,
 	});
 
@@ -68,9 +71,14 @@ export class dataBase_methods {
 			"init",
 			"admission",
 			"",
+
 			"competition_school",
 			"competition_department",
 			
+			//- R-Tables
+			"R_table_school",
+			"R_table_department",
+
 			//- Summarized data (schools, departments...)
 			"school",
 			"department",
@@ -113,11 +121,18 @@ export class dataBase_methods {
 					case "admission":
 						await QueryAdmissionViews(year, query_TableName);
 						break;
-					case "competition_school": //- R-scores for schools
+					case "competition_school": //- Competition for schools
 						await QueryCompetitionViews_School(year, query_TableName);
 						break;
-					case "competition_department": //- R-scores for group
+					case "competition_department": //- R-scores for departments
 						await QueryCompetitionViews_Department(year, query_TableName);
+						break;
+
+					case "R_table_school": //- R-scores for schools
+						await Query_R_table_School(year, query_TableName);
+						break;
+					case "R_table_department": //- R-scores for departments
+						await Query_R_table_Department(year, query_TableName);
 						break;
 
 					//- Summarized Tables
@@ -134,6 +149,7 @@ export class dataBase_methods {
 				console.log(
 					`  ✅\x1b[32m-- Successfully create \"${query_TableName}\" view.👁️\x1b[0m`
 				);
+				await new Promise((resolve) => setTimeout(resolve, 500));
 			};
 		} catch (err) {
 			console.error(err);
@@ -248,10 +264,10 @@ export class dataBase_methods {
 		}
 	}
 	static async getRelationData(bodyData) {
-		const { year = "", mode, departmentCodes, universityCode } = bodyData;
+		const { year = "", mode, departmentCodes, universityCode, departmentName } = bodyData;
 		const year_Int = parseInt(year);
 
-		let query;
+		let query, stringify='';
 		try {
 			switch (mode) {
 				case "school":
@@ -259,42 +275,35 @@ export class dataBase_methods {
 					query = {
 						text: `
 							SELECT *
-							FROM public.\"QUERY_${year_Int}_competition_${mode}${postfix}\"
+							FROM public.\"QUERY_${year}_competition_school${postfix}\"
+							WHERE
+								winner = '${universityCode}' OR
+								loser = '${universityCode}'
 						`,
 						rowMode: "array",
 					};
 					break;
 				
 				case "department":
+					stringify = [universityCode, departmentName].join("-");
 					query = {
 						text: `
 						SELECT
-							winner,
-							loser,
-							array_agg(isdraw) AS results,
-							COUNT(*) AS relationCount
-						FROM (
-							SELECT
-								SUBSTRING(winner,1,3) AS winner,
-								SUBSTRING(loser,1,3) AS loser,
-								isdraw
-							FROM public.\"QUERY_${year_Int}_admission${postfix}\"
+								winner,
+								loser,
+								results,
+								relationcount
+							FROM public.\"QUERY_${year_Int}_competition_department${postfix}\"
 							WHERE
-								winner LIKE '${universityCode}%' OR
-								loser LIKE '${universityCode}%'
-						)
-						WHERE
-							(winner != loser) 
-						GROUP BY
-							winner,
-							loser
+								winner = \'${stringify}\' OR
+								loser = \'${stringify}\'
 						`,
 						rowMode: "array",
 					};
 					break;
 				
 				default:
-					let stringify = departmentCodes.join("','");
+					stringify = departmentCodes.join("','");
 					query = {
 						text: `
 							SELECT
@@ -314,8 +323,8 @@ export class dataBase_methods {
 					};
 					break;
 			}
-			const res_nodes = await dbClient.query(query);
-			return Ts_matching_Ratings_Query(year_Int, res_nodes.rows, mode);
+			const { rows } = await dbClient.query(query);
+			return Ts_matching_Ratings_Query(year_Int, rows, mode);
 		} catch (err) {
 			console.error(err);
 		}
