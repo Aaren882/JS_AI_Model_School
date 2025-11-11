@@ -326,7 +326,7 @@ async function createInitView(year, query_TableName) {
             cast ("一般生招生名額" AS DOUBLE PRECISION)
           END
         ) AS ShiftRatio,
-        MIN(COALESCE(
+        COALESCE(
           "Distr_${year}".錄取總分數 /
           (
             "Distr_${year}".國文 +
@@ -335,7 +335,7 @@ async function createInitView(year, query_TableName) {
             "Distr_${year}".專業一 +
             "Distr_${year}".專業二
           )
-        , 0) AS "avg")
+        , 0) AS "avg"
       FROM Public."Distr_${year}"
       RIGHT JOIN Public."Data_${year}" ON 
         "Data_${year}".群別代號 LIKE "Distr_${year}".群別代號 AND
