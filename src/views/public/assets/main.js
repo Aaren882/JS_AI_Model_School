@@ -102,14 +102,6 @@ function dataParser(searchDept, joinElements = ["schoolname"]) {
 	return joinElements.map((x) => searched[x]);
 }
 
-function dataParserN(searchDept, joinElements = ["schoolname"]) {
-	const searched = currentDisplayMode === "school"?
-		originalUniversityData.find((x) => x.schoolcode === searchDept) :  //- search for school
-		originalUniversityData.find((x) => x.deptcode === searchDept);
-
-	return joinElements.map((x) => searched[x]);
-}
-
 function localizeDept(searchDept, joinElements = ["schoolname"], split = "/") {
 	return dataParser(searchDept, joinElements).join(split);
 }
@@ -437,7 +429,7 @@ function initializeYearSelects() {
 async function initializeData() {
 	try {
 		universityData = await loadSchoolData(currentYear);
-
+		console.log(universityData);
 		if (Object.keys(universityData).length === 0) {
 			universityList.innerHTML =
 				'<li style="padding: 10px; color: #666;">無法載入資料，請確認CSV檔案已上傳</li>';
@@ -976,7 +968,7 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 					// AcceptanceNumber
 					break;
 			}
-			const result = dataParserN(d, ["schoolname", "schoolcode",selectkey]);
+			const result = dataParser(d, ["schoolname", "schoolcode",selectkey]);
 			
 			return result[2];
 		} else {
@@ -993,7 +985,7 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 					break;
 			}
 			//- rest of the format
-			const result = dataParserN(d, ["schoolname", selectkey]);
+			const result = dataParser(d, ["schoolname", selectkey]);
 	
 			return result[1];
 		}
