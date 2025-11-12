@@ -1287,15 +1287,19 @@ async function Compare(CurrentJson) {
 	//- Request Data
 	const compareData = await loadCdata(CompareJson);
 	tableBody.innerHTML = ""; //- Clear TableBody
-
+	
 	const arrays = [compareData.source.flat(), compareData.target.flat()];
 	const lookups = arrays.map((item) => {
 		let obj = {};
 		item.forEach(({ schoolcode, deptname, category, r_score }) => {
+
 			//- #NOTE - Checking "school" mode
 			if (currentDisplayMode === "school") return (obj[schoolcode] = r_score);
 
-			const key = `${schoolcode}/${deptname}/${category}`;
+			let category_Str = category.split(',').map((x) => `${x}${simplifyCategory(x)}`);
+			category_Str = `[${category_Str.join(', ') }]`;
+
+			const key = [schoolcode, deptname, category_Str].join('/');
 			obj[key] = r_score;
 		});
 		return obj;
@@ -1305,16 +1309,17 @@ async function Compare(CurrentJson) {
 	arrays.forEach((item) => {
 		return item.forEach(
 			({ schoolcode, schoolname, deptname, category }) => {
-
+				
 				//- Labels for "school" mode
 				if (currentDisplayMode === "school")
 					return (Labels[schoolcode] = schoolname);
+				
+				let category_Str = category.split(',').map((x) => `${x}${simplifyCategory(x)}`);
+				category_Str = `[${category_Str.join(', ')}]`;
 
 				//- Detail labels by default
-				const key = `${schoolcode}/${deptname}/${category}`;
-				Labels[key] = `${schoolname} ${deptname} [${category}${simplifyCategory(
-					category
-				)}]`;
+				const key = [schoolcode, deptname, category_Str].join('/');
+				Labels[key] = `${schoolname} ${deptname} ${category_Str}`;
 			}
 		);
 	});

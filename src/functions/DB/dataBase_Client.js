@@ -436,6 +436,24 @@ export class dataBase_methods {
 							schoolname
 					`;
 					break;
+				case "department":
+					tg_query_Summary = `
+						SELECT 
+							schoolcode,
+							schoolname,
+							deptname,
+							ARRAY_TO_STRING(categories, ',') AS category,
+							"posvalid",
+							"admissionrate",
+							"r_score",
+							"shiftratio",
+							"avg"
+						FROM public."QUERY_${year_Int}_department${postfix}"
+						WHERE FORMAT('%s-%s', schoolcode, deptname) in (
+							\'${res_nodes["nodes"].map((x) => x[0]).join("','")}\'
+						)
+					`;
+					break;
 
 				default:
 					//- Summarize departments into average values

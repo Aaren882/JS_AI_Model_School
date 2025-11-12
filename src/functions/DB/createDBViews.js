@@ -134,7 +134,7 @@ async function createDataView_School(year, query_TableName) {
     text: `
       SELECT
         SC.*,
-        TG.r_score
+        CAST(TG.r_score AS real)
       FROM
       (
         SELECT
@@ -200,7 +200,7 @@ async function createDataView_Department(year, query_TableName) {
     text: `
       SELECT
         SC.*,
-        TG.r_score
+        cast(TG.r_score AS real)
       FROM
       (
         (
