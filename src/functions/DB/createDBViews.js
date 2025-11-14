@@ -10,32 +10,31 @@ async function createDataView(year, query_TableName) {
       
     AdmissionNumber (一般生錄取名額)
       : "一般生招生名額" - max("一般生名額空缺", 0)
-      
+    
+    //- 統測甄選
     TotalAdmissionNumber (一般生招生名額)
-      : "一般生招生名額"
-
-    AcceptanceNumber (一般生錄取錄取人數)
       : 
+    TotalRegistered (報到人數)
+      :
+    AcceptanceNumber (一般生正取錄取人數)
+      : 
+    WaitlistNumber (一般生備取錄取人數)
+      :
     TotalAcceptanceNumber (一般生正取總人數)
       :
+    TotalWaitlistNumber (備取總人數)
+      :
+    
+    //- 統測分發 (Tutc 統測)
+    Tutc_TotalAdmissionNumber (招生名額)
+      : NULL 會變成 0
+    Tutc_TotalAcceptanceNumber (錄取人數)
+      : NULL 會變成 0
   */
   const query = {
 		text: `
       SELECT
-        schoolCode,
-        schoolName,
-        deptCode,
-        deptName,
-        category,
-        
-        AdmissionVacancies,
-
-        AcceptanceNumber,
-        TotalAcceptanceNumber,
-
-        AdmissionNumber,
-        TotalAdmissionNumber,
-
+        *,
         CASE
           WHEN TotalAcceptanceNumber = 0 THEN
             0
@@ -55,12 +54,7 @@ async function createDataView(year, query_TableName) {
             0
           ELSE
             AdmissionVacancies / TotalAdmissionNumber
-          END AS ShiftRatio,
-        
-        admissionValidity AS admissionValidity,
-        r_score AS r_score,
-        "avg" AS "avg"
-        
+          END AS ShiftRatio
       FROM
         public."QUERY_${year}_init${postfix}"
     `,
@@ -128,14 +122,12 @@ async function createDataView(year, query_TableName) {
     name: `insert_Non_Distribute_DeptCodes-${year}_VIEW_Table`,
 		text: `
       INSERT INTO public."Non_Distribute_DeptCodes"
-        ("year", deptcodes) VALUES (
+        ("year", Excluded_deptcodes) VALUES (
           ${year},
           (
             ARRAY(
               SELECT
-                (
-                  cast ("校系代碼" AS text)
-                ) AS deptCode
+                cast ("校系代碼" AS text)
               FROM Public."Distr_${year}"
               RIGHT JOIN Public."Data_${year}"
               ON
@@ -149,7 +141,7 @@ async function createDataView(year, query_TableName) {
           )
         )
         ON CONFLICT ("year") DO UPDATE SET
-          deptcodes = EXCLUDED.deptcodes
+          Excluded_deptcodes = EXCLUDED.Excluded_deptcodes
     `,
 	};
 	await Promise.all(
@@ -304,78 +296,79 @@ async function createInitView(year, query_TableName) {
 
   const query = {
     text: `
-      SELECT *
-      FROM (
-        SELECT
-          (
-            SUBSTRING(
-              cast ("校系代碼" as varChar),1,3
-            )
-          ) AS schoolCode,
-          "Data_${year}".學校名稱 AS schoolName,
-          (
-            cast ("校系代碼" AS varChar)
-          ) AS deptCode,
-          "Data_${year}".系科組學程名稱 AS deptName,
-          "Data_${year}".群別代號 AS category,
-          "正取有效性" AS posValid,
-          "正備取有效性" AS admissionValidity,
+    SELECT * FROM (
+      SELECT
+        (
+          SUBSTRING(
+            cast ("校系代碼" as varChar),1,3
+          )
+        ) AS schoolCode,
+        "Data_${year}".學校名稱 AS schoolName,
+        (
+          cast ("校系代碼" AS varChar)
+        ) AS deptCode,
+        "Data_${year}".系科組學程名稱 AS deptName,
+        "Data_${year}".群別代號 AS category,
 
-          (
-            CASE
-            WHEN "一般生招生名額" = 0 THEN 
-              0
-            ELSE
-              (
-                cast ("一般生招生名額" AS DOUBLE PRECISION) -
-                LEAST(
-                  cast ("一般生招生名額" AS DOUBLE PRECISION),
-                  GREATEST(
-                    cast ("一般生名額空缺" AS DOUBLE PRECISION),
-                    0
-                  )
+        (
+          CASE
+          WHEN "一般生招生名額" = 0 THEN 
+            0
+          ELSE
+            (
+              cast ("一般生招生名額" AS DOUBLE PRECISION) -
+              LEAST(
+                cast ("一般生招生名額" AS DOUBLE PRECISION),
+                GREATEST(
+                  cast ("一般生名額空缺" AS DOUBLE PRECISION),
+                  0
                 )
               )
-            END
-          ) AS AdmissionNumber,
-          cast ("一般生招生名額" AS DOUBLE PRECISION) AS TotalAdmissionNumber,
-          cast ("一般生正取錄取人數" AS DOUBLE PRECISION) AS AcceptanceNumber,
-          cast ("正取總人數" AS DOUBLE PRECISION) AS TotalAcceptanceNumber,
-          GREATEST(
-            cast ("一般生名額空缺" AS DOUBLE PRECISION),0
-          ) AS AdmissionVacancies,
-          
-          r_score AS r_score,
-          (
-            CASE
-            WHEN "一般生招生名額" = 0 THEN 
-              0
-            ELSE
-              GREATEST(
-                cast ("一般生名額空缺" AS DOUBLE PRECISION),
-                0
-              ) / 
-              cast ("一般生招生名額" AS DOUBLE PRECISION)
-            END
-          ) AS ShiftRatio,
-          COALESCE(
-            "Distr_${year}".錄取總分數 /
-            (
-              "Distr_${year}".國文 +
-              "Distr_${year}".英文 +
-              "Distr_${year}".數學 +
-              "Distr_${year}".專業一 +
-              "Distr_${year}".專業二
             )
-          , 0) AS "avg"
-        FROM Public."Distr_${year}"
-        RIGHT JOIN Public."Data_${year}" ON 
-          "Data_${year}".群別代號 LIKE "Distr_${year}".群別代號 AND
-          "Data_${year}".學校名稱 LIKE "Distr_${year}".學校名稱 AND
-          POSITION("Data_${year}".系科組學程名稱 IN "Distr_${year}".系科組學程名稱) > 0 AND
-          "Distr_${year}".群別代號 LIKE "Distr_${year}".群別代號
-      )
-      WHERE "avg" != 0
+          END
+        ) AS AdmissionNumber,
+
+        COALESCE(
+          "Distr_${year}".招生名額,
+          0
+        ) AS Tutc_TotalAdmissionNumber,
+        COALESCE(
+          "Distr_${year}".錄取人數,
+          0
+        ) AS Tutc_TotalAcceptanceNumber,
+
+        cast ("一般生招生名額" AS DOUBLE PRECISION) AS TotalAdmissionNumber,
+
+        cast ("正取總人數" AS DOUBLE PRECISION) AS TotalAcceptanceNumber,
+        cast ("備取總人數" AS DOUBLE PRECISION) AS TotalWaitlistNumber,
+
+        cast ("一般生正取錄取人數" AS DOUBLE PRECISION) AS AcceptanceNumber,
+        cast ("一般生備取錄取人數" AS DOUBLE PRECISION) AS WaitlistNumber,
+        cast ("報到人數" AS DOUBLE PRECISION) AS TotalRegistered,
+        GREATEST(
+          cast ("一般生名額空缺" AS DOUBLE PRECISION),0
+        ) AS AdmissionVacancies,
+         
+        r_score AS r_score,
+        
+        COALESCE(
+          "Distr_${year}".錄取總分數 /
+          (
+            "Distr_${year}".國文 +
+            "Distr_${year}".英文 +
+            "Distr_${year}".數學 +
+            "Distr_${year}".專業一 +
+            "Distr_${year}".專業二
+          )
+        , 0) AS "avg"
+      FROM Public."Distr_${year}"
+      RIGHT JOIN Public."Data_${year}" ON 
+        "Data_${year}".群別代號 LIKE "Distr_${year}".群別代號 AND
+        "Data_${year}".學校名稱 LIKE "Distr_${year}".學校名稱 AND
+        POSITION("Data_${year}".系科組學程名稱 IN "Distr_${year}".系科組學程名稱) > 0 AND
+        "Distr_${year}".群別代號 LIKE "Distr_${year}".群別代號
+    )
+    WHERE "avg" != 0
     `, //- #NOTE : Exclude "AVG" from here 👆
   };
   const create = {
@@ -457,6 +450,48 @@ async function createAdmissionView(year, query_TableName) {
   //- create view table
   await dbClient.query(create);
 }
+async function createCompetitionViews(year, query_TableName) {
+  const query = {
+    text: `
+      SELECT
+        winner,
+        loser,
+        results,
+        relationCount
+      FROM
+      (
+        SELECT
+          winner,
+          loser,
+          array_agg(isdraw) AS results,
+          COUNT (*) AS relationCount
+        FROM public."QUERY_${year}_admission${postfix}"
+        WHERE
+          winner != loser
+        GROUP BY
+          winner,
+          loser
+      )
+      INNER JOIN
+          (SELECT Excluded_deptcodes FROM public."Non_Distribute_DeptCodes" WHERE "year" = ${year})
+      ON NOT (
+        winner = ANY(Excluded_deptcodes) AND
+        loser = ANY(Excluded_deptcodes)
+      )
+    `,
+  };
+
+  const create = {
+    name: `create-${query_TableName}_VIEW_Table`,
+    text: `
+      CREATE MATERIALIZED VIEW "${query_TableName}" AS
+        ${query.text}
+    `,
+  };
+
+  //- create view table
+  await dbClient.query(create);
+}
 async function createCompetitionViews_School(year, query_TableName) {
   const query = {
     text: `
@@ -471,6 +506,12 @@ async function createCompetitionViews_School(year, query_TableName) {
           SUBSTRING(loser,1,3) AS loser,
           isdraw
         FROM public."QUERY_${year}_admission${postfix}"
+        INNER JOIN
+          (SELECT Excluded_deptcodes FROM public."Non_Distribute_DeptCodes" WHERE "year" = ${year})
+        ON NOT (
+          winner = ANY(Excluded_deptcodes) AND
+          loser = ANY(Excluded_deptcodes)
+        )
       )
       WHERE
         (winner != loser)
@@ -518,20 +559,8 @@ async function createCompetitionViews_Department(year, query_TableName) {
         TG.relationCount
       FROM (
       (
-        SELECT
-          winner,
-          loser,
-          array_agg(isdraw) AS results,
-          COUNT (*) AS relationCount
-        FROM (
-          SELECT *
-          FROM public."QUERY_${year}_admission${postfix}"
-        )
-        WHERE
-          (winner != loser)
-        GROUP BY
-          winner,
-          loser
+        SELECT *
+        FROM public."QUERY_${year}_competition${postfix}"
       ) TG
       INNER JOIN
         (
@@ -723,6 +752,9 @@ export function QueryViews_Department(year, query_TableName) {
 }
 
 //- Competition Data (winner, loser)
+export function QueryCompetitionViews(year, query_TableName) {
+  return createCompetitionViews(year, query_TableName);
+}
 export function QueryCompetitionViews_School(year, query_TableName) {
   return createCompetitionViews_School(year, query_TableName);
 }
