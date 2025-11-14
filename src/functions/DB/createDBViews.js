@@ -266,6 +266,40 @@ async function createDataView_Department(year, query_TableName) {
 
   //- create view table
   await dbClient.query(create);
+
+  //- Updates the min_AVG_Query
+  const Create_min_AVG_Query = {
+    name: `Create_min_AVG_Query-${year}_VIEW_Table`,
+    text: `
+      DO $$
+        BEGIN
+        IF EXISTS (
+          SELECT 1 
+          FROM information_schema.tables
+          WHERE 
+            table_schema = 'public' AND
+            table_name = 'min_AVG_Query_${year}'
+        ) THEN
+          RAISE NOTICE 'Table "min_AVG_Query_${year}" does exist. Cannot create table.';
+        ELSE
+          CREATE TABLE IF NOT EXISTS public."min_AVG_Query_${year}"  (
+            min_deptcodes character varying[],
+            min_avg real
+          );
+
+          INSERT INTO public."min_AVG_Query_${year}"
+            (min_deptcodes, min_avg)
+            SELECT
+              deptcodes,
+              "avg"
+            FROM Public."QUERY_${year}_department_DEV";
+        END IF;
+      END $$;
+    `,
+  };
+
+  //- insert "min_AVG_Query"
+  await dbClient.query(Create_min_AVG_Query);
 }
 
 //- Prefix "QUERY_Init_" => 輕量整理後的初始資料
@@ -333,8 +367,9 @@ async function createInitView(year, query_TableName) {
             "Distr_${year}".數學 +
             "Distr_${year}".專業一 +
             "Distr_${year}".專業二
-          )
-        , 999) AS "avg"
+          ),
+          999 
+        ) AS "avg"
       FROM Public."Distr_${year}"
       RIGHT JOIN Public."Data_${year}" ON 
         "Data_${year}".群別代號 LIKE "Distr_${year}".群別代號 AND

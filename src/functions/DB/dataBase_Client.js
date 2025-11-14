@@ -161,8 +161,28 @@ export class dataBase_methods {
   */
 	static async getAllGroup(year_Int = -1) {
 		const query = `
-      SELECT *
-      FROM public."QUERY_${year_Int}${postfix}"
+      SELECT 
+				schoolcode,
+				schoolname,
+				deptcode,
+				deptname,
+				category,
+				admissionvacancies,
+				acceptancenumber,
+				totalacceptancenumber,
+				admissionnumber,
+				totaladmissionnumber,
+				posvalid,
+				admissionrate,
+				shiftratio,
+				admissionvalidity,
+				r_score,
+				LEAST("avg", min_avg) AS "avg"
+			FROM public."QUERY_${year_Int}${postfix}"
+			JOIN
+				public."min_AVG_Query_${year_Int}" TG
+			ON
+				deptcode = ANY(TG.min_deptcodes)
     `;
 
 		try {
