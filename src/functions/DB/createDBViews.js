@@ -122,8 +122,38 @@ async function createDataView(year, query_TableName) {
         WHERE "校系代碼" = new_data.school_id;
     `,
 	};
+
+  //- Updates the Non_Distribute_DeptCodes
+  const insert_Non_Distribute_DeptCodes = {
+    name: `insert_Non_Distribute_DeptCodes-${year}_VIEW_Table`,
+		text: `
+      INSERT INTO public."Non_Distribute_DeptCodes"
+        ("year", deptcodes) VALUES (
+          ${year},
+          (
+            ARRAY(
+              SELECT
+                (
+                  cast ("校系代碼" AS text)
+                ) AS deptCode
+              FROM Public."Distr_${year}"
+              RIGHT JOIN Public."Data_${year}"
+              ON
+                "Data_${year}".群別代號 LIKE "Distr_${year}".群別代號 AND
+                "Data_${year}".學校名稱 LIKE "Distr_${year}".學校名稱 AND
+                POSITION("Data_${year}".系科組學程名稱 IN "Distr_${year}".系科組學程名稱) > 0 AND
+                "Distr_${year}".群別代號 LIKE "Distr_${year}".群別代號
+              WHERE
+                "錄取總分數" IS NULL
+            )
+          )
+        )
+        ON CONFLICT ("year") DO UPDATE SET
+          deptcodes = EXCLUDED.deptcodes
+    `,
+	};
 	await Promise.all(
-		[insert_R, insert_ShiftRatios].map((x) => {
+    [insert_R, insert_ShiftRatios, insert_Non_Distribute_DeptCodes].map((x) => {
 			dbClient.query(x)
 		})
 	);
