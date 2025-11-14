@@ -7,6 +7,7 @@ import {
 	QueryViews_School,
 	QueryViews_Department,
 
+	QueryCompetitionViews,
 	QueryCompetitionViews_School,
 	QueryCompetitionViews_Department,
 
@@ -72,6 +73,7 @@ export class dataBase_methods {
 			"admission",
 			"",
 
+			"competition",
 			"competition_school",
 			"competition_department",
 			
@@ -120,6 +122,9 @@ export class dataBase_methods {
 						break;
 					case "admission":
 						await QueryAdmissionViews(year, query_TableName);
+						break;
+					case "competition": //- Competition for schools
+						await QueryCompetitionViews(year, query_TableName);
 						break;
 					case "competition_school": //- Competition for schools
 						await QueryCompetitionViews_School(year, query_TableName);
