@@ -475,7 +475,7 @@ async function createCompetitionViews(year, query_TableName) {
       INNER JOIN
           (SELECT Excluded_deptcodes FROM public."Non_Distribute_DeptCodes" WHERE "year" = ${year})
       ON NOT (
-        winner = ANY(Excluded_deptcodes) AND
+        winner = ANY(Excluded_deptcodes) OR
         loser = ANY(Excluded_deptcodes)
       )
     `,
@@ -509,7 +509,7 @@ async function createCompetitionViews_School(year, query_TableName) {
         INNER JOIN
           (SELECT Excluded_deptcodes FROM public."Non_Distribute_DeptCodes" WHERE "year" = ${year})
         ON NOT (
-          winner = ANY(Excluded_deptcodes) AND
+          winner = ANY(Excluded_deptcodes) OR
           loser = ANY(Excluded_deptcodes)
         )
       )
