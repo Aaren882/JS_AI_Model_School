@@ -307,7 +307,7 @@ async function createInitView(year, query_TableName) {
 
   const query = {
     text: `
-      SELECT
+      SELECT DISTINCT
         (
           SUBSTRING(
             cast ("校系代碼" as varChar),1,3
