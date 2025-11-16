@@ -21,7 +21,8 @@ import {
 //- Make sure DB is connected
 console.log("Connecting Database...");
 
-const postfix = process.env.QUERY_POSTFIX || "";
+export const postfix = process.env.QUERY_POSTFIX || "";
+
 let dbClient = null;
 if (!dbClient) {
 	/* dbClient = new Client({

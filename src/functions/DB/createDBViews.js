@@ -1,4 +1,5 @@
 import dbClient from "../DB/dataBase_Client.js";
+import { postfix } from "../DB/dataBase_Client.js";
 import { Ts_data, Ts_matching_Ratings_Array } from "../ts_validation.js";
 const postfix = process.env.QUERY_POSTFIX || "";
 
