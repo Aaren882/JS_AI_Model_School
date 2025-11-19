@@ -97,7 +97,7 @@ function parseSchoolData(schoolData) {
 function dataParser(searchDept, joinElements = ["schoolname"]) {
 	const searched = currentDisplayMode === "school"?
 		originalUniversitySumData.find((x) => x.schoolcode === searchDept ) : //- search for school
-		currentDisplayMode === "department" ? originalUniversityDepartmentData.find((x) => x.schoolcode === searchDept[0] && x.deptname === searchDept[1]) :  
+		currentDisplayMode === "department" ? originalUniversityDepartmentData.find((x) => searchDept === `${x.schoolcode}-${x.deptname}`) :  
 		originalUniversityData.find((x) => x.deptcode === searchDept);
 	return joinElements.map((x) => searched[x]);
 }
@@ -550,7 +550,7 @@ function GetRelationData(payload) {
 	})
 		.then((res) => res.json())
 		.then((json) => {
-			//console.log(json);
+			// console.log(json);
 			const { nodes, edges } = json;
 			drawLineChart("chart-line-1", nodes, "報到率", "admissionrate");
 			drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
@@ -861,7 +861,7 @@ function renderNetwork(nodes, edges) {
 			}else{merged[key][2]+=NumberN}
 		})
 		edges = Object.values(merged);
-		nodes.map((N)=>{N[0]=N[0].join('-')})
+		nodes.map((N) => N[0])
 	}
 	const edgeCountMap = edges.map(([source, target, relationCount])=>{
 		return {
@@ -875,14 +875,15 @@ function renderNetwork(nodes, edges) {
 	cytoscape({
 		container: document.getElementById("network-container"),
 		elements: [
-			...nodes.map((n) => ({
+			...nodes.map(([node, r_score]) => ({
 				data: {
-					id: n[0],
+					id: node,
 					label:
 						currentDisplayMode === "school" ?
-							`${localizeDept(n[0], ["schoolname"])} ${n[1]}` : currentDisplayMode === "department" ? 
-							`${localizeDept(n[0].split('-'), ["schoolcode","schoolname","deptname"])} ${n[1]}` :
-							`${localizeDept(n[0], ["deptcode", "schoolname", "deptname"])} ${n[1]}`
+							`${localizeDept(node, ["schoolname"])} ${r_score}` : 
+						currentDisplayMode === "department" ? 
+							`${localizeDept(node, ["schoolcode", "schoolname", "deptname"])} ${r_score}` :
+							`${localizeDept(node, ["deptcode", "schoolname", "deptname"])} ${r_score}`
 				},
 			})),
 			...edgeCountMap,
@@ -947,43 +948,43 @@ function safeDraw(containerId, chartConfig) {
 	chartInstances[containerId] = new Chart(ctx, chartConfig);
 }
 function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
-	
+
 	nodes = nodes.map((x) => x[0]);
-	let selectkey="";
+	let selectkey = "";
 	const CountData = nodes.map((d) => { //- Formatting labels
 		//- Separate format for "school"
 		if (currentDisplayMode === "school") {
-			switch(containerId){
+			switch (containerId) {
 				case "chart-line-1":
-					selectkey="admissionnumber";
+					selectkey = "admissionnumber";
 					break;
 				case "chart-line-3":
-					selectkey="admissionvacancies";
+					selectkey = "admissionvacancies";
 					break;
 				case "chart-line-4":
-					selectkey="acceptancenumber";	
+					selectkey = "acceptancenumber";
 					// AcceptanceNumber
 					break;
 			}
-			const result = dataParser(d, ["schoolname", "schoolcode",selectkey]);
+			const result = dataParser(d, ["schoolname", "schoolcode", selectkey]);
 
 			return result[2];
 		} else {
-			switch(containerId){
+			switch (containerId) {
 				case "chart-line-1":
-					selectkey="admissionnumber";
+					selectkey = "admissionnumber";
 					break;
 				case "chart-line-3":
-					selectkey="admissionvacancies";
+					selectkey = "admissionvacancies";
 					break;
 				case "chart-line-4":
-					selectkey="acceptancenumber";	
+					selectkey = "acceptancenumber";
 					// AcceptanceNumber
 					break;
 			}
 			//- rest of the format
 			const result = dataParser(d, ["schoolname", selectkey]);
-			
+
 			return result[1];
 		}
 	});
@@ -994,16 +995,16 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 		//- Separate format for "school"
 		if (currentDisplayMode === "school") {
 			const [schoolname, schoolcode] = dataParser(d, ["schoolname", "schoolcode"]);
-			
+
 			return `${schoolcode} - ${schoolname}`;
 		} else {
-			
+
 			//- rest of the format
 			const result = dataParser(d, ["schoolname", "deptname", "category"]);
-			if(currentDisplayMode==="department"){
+			if (currentDisplayMode === "department") {
 				const [, deptname] = result;
 			}
-			else{
+			else {
 				const [, deptname, category] = result;
 				result[1] = `${deptname} - ${category}${simplifyCategory(category)}`;
 			}
@@ -1040,26 +1041,31 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 						const index = ctx.dataIndex;
 						const count = CountData[index];
 						return `${count}人\n${value.toFixed(2)}`; // 小數點兩位
-						
+
 					},
 					font: { size: 10 },
 				},
 				title: { display: true, text: chartName },
 			},
-			scales:{
-				x:{ticks:{autoskip:false,fontSize:6,minRotation:0,maxRotation:0,
-					color: (ctx) => {
-                        if (!selectedLabel) return "black";
-                        const lab = labels[ctx.index];
-                        const labStr = Array.isArray(lab) ? lab.join(" ").toLowerCase() : String(lab).toLowerCase();
-                        return labStr.includes(selectedLabel) ? "red" : "black";
-                    },
-					callback: function(value,index,ticks) {
-					const words = String(this.getLabelForValue(value)).split('');
-					words.forEach(i =>{i===','?words[words.indexOf(i)]=' ':i,i==='（' || i==='）'?words.splice(words.indexOf(i),1):i});
-					return words;
-				}}},
-				y:{suggestedMin:0,suggestedMax:1.2}},
+			scales: {
+				x: {
+					ticks: {
+						autoskip: false, fontSize: 6, minRotation: 0, maxRotation: 0,
+						color: (ctx) => {
+							if (!selectedLabel) return "black";
+							const lab = labels[ctx.index];
+							const labStr = Array.isArray(lab) ? lab.join(" ").toLowerCase() : String(lab).toLowerCase();
+							return labStr.includes(selectedLabel) ? "red" : "black";
+						},
+						callback: function (value, index, ticks) {
+							const words = String(this.getLabelForValue(value)).split('');
+							words.forEach(i => { i === ',' ? words[words.indexOf(i)] = ' ' : i, i === '（' || i === '）' ? words.splice(words.indexOf(i), 1) : i });
+							return words;
+						}
+					}
+				},
+				y: { suggestedMin: 0, suggestedMax: 1.2 }
+			},
 		},
 	});
 }
@@ -1076,10 +1082,10 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 
 			//- rest of the format
 			const result = dataParser(d[0], ["schoolname", "deptname", "category"]);
-			if(currentDisplayMode==="department"){
+			if (currentDisplayMode === "department") {
 				const [, deptname] = result;
 			}
-			else{
+			else {
 				const [, deptname, category] = result;
 				result[1] = `${deptname} - ${category}${simplifyCategory(category)}`;
 			}
@@ -1088,13 +1094,13 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 	});
 	const rValues = nodes.map((d) => d[1]);
 	const avgValues = nodes.map((d) => {
-		
+
 		let result = parseFloat(localizeDept(d[0], [avgKey]));
 		if (result === 999) return "";
 
 		return result.toFixed(2);
 	});
-	const ranks =[
+	const ranks = [
 		CalcRanks(rValues),
 		CalcRanks(avgValues)
 	];
@@ -1137,39 +1143,43 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 						const rank = ranks[ctx.datasetIndex][ctx.dataIndex];
 						return rank === 1 ? "gold" : rank === 2 ? "silver" : rank === 3 ? "#cd7f32" : "#000000";
 					},
-					align: (ctx)=> ctx.datasetIndex === 0 ? "top" : "bottom",
+					align: (ctx) => ctx.datasetIndex === 0 ? "top" : "bottom",
 					anchor: "end",
 					formatter: function (value, ctx) {
 						value = value === "" ? "查無資料" : value;
 						return `(${ranks[ctx.datasetIndex][ctx.dataIndex]}）\n${value}`;
 					},
-					font: (ctx) => { 
+					font: (ctx) => {
 						const rank = ranks[ctx.datasetIndex][ctx.dataIndex];
 						return { size: rank <= 3 ? 12 : 10, weight: rank <= 3 ? 'bold' : 'normal' };
-					 },
-					 textStrokeColor: (ctx) => {
+					},
+					textStrokeColor: (ctx) => {
 						const rank = ranks[ctx.datasetIndex][ctx.dataIndex];
 						return rank <= 3 ? '#000000ff' : '#ffffffaa';
-					 },
-					 textStrokeWidth: (ctx) => {
+					},
+					textStrokeWidth: (ctx) => {
 						const rank = ranks[ctx.datasetIndex][ctx.dataIndex];
 						return rank <= 3 ? 1 : 0;
-					 }
+					}
 				},
 			},
 			scales: {
-				x:{ticks:{autoskip:false,maxRotation:0,minRotation:0,fontSize:6,
-					color: (ctx) => {
-                        if (!selectedLabel) return "black";
-                        const lab = labels[ctx.index];
-                        const labStr = Array.isArray(lab) ? lab.join(" ").toLowerCase() : String(lab).toLowerCase();
-                        return labStr.includes(selectedLabel) ? "red" : "black";
-                    },
-					callback: function(value,index,ticks) {
-					const words = String(this.getLabelForValue(value)).split('');
-					words.forEach(i =>{i===','?words[words.indexOf(i)]=' ':i,i==='（' || i==='）'?words.splice(words.indexOf(i),1):i});
-					return words;
-				}}},
+				x: {
+					ticks: {
+						autoskip: false, maxRotation: 0, minRotation: 0, fontSize: 6,
+						color: (ctx) => {
+							if (!selectedLabel) return "black";
+							const lab = labels[ctx.index];
+							const labStr = Array.isArray(lab) ? lab.join(" ").toLowerCase() : String(lab).toLowerCase();
+							return labStr.includes(selectedLabel) ? "red" : "black";
+						},
+						callback: function (value, index, ticks) {
+							const words = String(this.getLabelForValue(value)).split('');
+							words.forEach(i => { i === ',' ? words[words.indexOf(i)] = ' ' : i, i === '（' || i === '）' ? words.splice(words.indexOf(i), 1) : i });
+							return words;
+						}
+					}
+				},
 				y1: {
 					type: "linear",
 					position: "left",
@@ -1192,17 +1202,17 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 	});
 }
 
-function CalcRanks(values){
-	const rank = values.map((v,i)=>({v,i}))
-	.sort((a,b)=>b.v - a.v);
-	const ranks =[];
+function CalcRanks(values) {
+	const rank = values.map((v, i) => ({ v, i }))
+		.sort((a, b) => b.v - a.v);
+	const ranks = [];
 	let currentRank = 1;
-	for(let i=0;i<rank.length;i++){
+	for (let i = 0; i < rank.length; i++) {
 		const item = rank[i];
-		if(i>0 && item.v === rank[i-1].v){
+		if (i > 0 && item.v === rank[i - 1].v) {
 			ranks[item.i] = currentRank;
-		}else{
-			currentRank = i+1;
+		} else {
+			currentRank = i + 1;
 			ranks[item.i] = currentRank;
 		}
 	}
@@ -1278,7 +1288,7 @@ async function Compare(CurrentJson) {
 	//- Request Data
 	const compareData = await loadCdata(CompareJson);
 	tableBody.innerHTML = ""; //- Clear TableBody
-	
+
 	const arrays = [compareData.source.flat(), compareData.target.flat()];
 	const lookups = arrays.map((item) => {
 		let obj = {};
@@ -1288,7 +1298,7 @@ async function Compare(CurrentJson) {
 			if (currentDisplayMode === "school") return (obj[schoolcode] = r_score);
 
 			let category_Str = category.split(',').map((x) => `${x}${simplifyCategory(x)}`);
-			category_Str = `[${category_Str.join(', ') }]`;
+			category_Str = `[${category_Str.join(', ')}]`;
 
 			const key = [schoolcode, deptname, category_Str].join('/');
 			obj[key] = r_score;
@@ -1300,11 +1310,11 @@ async function Compare(CurrentJson) {
 	arrays.forEach((item) => {
 		return item.forEach(
 			({ schoolcode, schoolname, deptname, category }) => {
-				
+
 				//- Labels for "school" mode
 				if (currentDisplayMode === "school")
 					return (Labels[schoolcode] = schoolname);
-				
+
 				let category_Str = category.split(',').map((x) => `${x}${simplifyCategory(x)}`);
 				category_Str = `[${category_Str.join(', ')}]`;
 
