@@ -1,10 +1,9 @@
 import dbClient from "./DB/dataBase_Client.js";
-import { dataBase_methods } from "./DB/dataBase_Client.js";
+import { postfix, dataBase_methods } from "./DB/dataBase_Client.js";
 import { rate_1vs1, Rating } from "ts-trueskill";
 
 const _cache = new Map();
 const _cache_Rating = new Map();
-const postfix = process.env.QUERY_POSTFIX || "";
 
 export async function Ts_data(year = 111) {
 	try {

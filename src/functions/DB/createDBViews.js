@@ -1,6 +1,6 @@
 import dbClient from "../DB/dataBase_Client.js";
+import { postfix } from "../DB/dataBase_Client.js";
 import { Ts_data, Ts_matching_Ratings_Array } from "../ts_validation.js";
-const postfix = process.env.QUERY_POSTFIX || "";
 
 //- Prefix "Data_" => 甄選
 async function createDataView(year, query_TableName) {
@@ -10,39 +10,31 @@ async function createDataView(year, query_TableName) {
       
     AdmissionNumber (一般生錄取名額)
       : "一般生招生名額" - max("一般生名額空缺", 0)
-      
+    
+    //- 統測甄選
     TotalAdmissionNumber (一般生招生名額)
-      : "一般生招生名額"
-
-    AcceptanceNumber (一般生錄取錄取人數)
       : 
+    TotalRegistered (報到人數)
+      :
+    AcceptanceNumber (一般生正取錄取人數)
+      : 
+    WaitListNumber (一般生備取錄取人數)
+      :
     TotalAcceptanceNumber (一般生正取總人數)
       :
+    TotalWaitListNumber (備取總人數)
+      :
+    
+    //- 統測分發 (Tutc 統測)
+    Tutc_TotalAdmissionNumber (招生名額)
+      : NULL 會變成 0
+    Tutc_TotalAcceptanceNumber (錄取人數)
+      : NULL 會變成 0
   */
   const query = {
 		text: `
       SELECT
-        schoolCode,
-        schoolName,
-        deptCode,
-        deptName,
-        category,
-        
-        AdmissionVacancies,
-
-        AcceptanceNumber,
-        TotalAcceptanceNumber,
-
-        AdmissionNumber,
-        TotalAdmissionNumber,
-
-        CASE
-          WHEN TotalAcceptanceNumber = 0 THEN
-            0
-          ELSE
-            AcceptanceNumber / TotalAcceptanceNumber
-          END AS posValid,
-
+        *,
         CASE
           WHEN TotalAdmissionNumber = 0 THEN
             0
@@ -55,12 +47,7 @@ async function createDataView(year, query_TableName) {
             0
           ELSE
             AdmissionVacancies / TotalAdmissionNumber
-          END AS ShiftRatio,
-        
-        admissionValidity AS admissionValidity,
-        r_score AS r_score,
-        "avg" AS "avg"
-        
+          END AS ShiftRatio
       FROM
         public."QUERY_${year}_init${postfix}"
     `,
@@ -142,12 +129,17 @@ async function createDataView_School(year, query_TableName) {
           schoolName,
 
           SUM(AdmissionVacancies) AS AdmissionVacancies,
-
-          SUM(AcceptanceNumber) AS AcceptanceNumber,
-          SUM(TotalAcceptanceNumber) AS TotalAcceptanceNumber,
-
           SUM(AdmissionNumber) AS AdmissionNumber,
           SUM(TotalAdmissionNumber) AS TotalAdmissionNumber,
+
+          SUM(TotalRegistered) AS TotalRegistered,
+          SUM(AcceptanceNumber) AS AcceptanceNumber,
+          SUM(WaitListNumber) AS WaitListNumber,
+          SUM(TotalAcceptanceNumber) AS TotalAcceptanceNumber,
+          SUM(TotalWaitListNumber) AS TotalWaitListNumber,
+          
+          SUM(Tutc_TotalAdmissionNumber) AS Tutc_TotalAdmissionNumber,
+          SUM(Tutc_TotalAcceptanceNumber) AS Tutc_TotalAcceptanceNumber,
 
           CASE
             WHEN SUM(TotalAcceptanceNumber) = 0 THEN
@@ -212,12 +204,17 @@ async function createDataView_Department(year, query_TableName) {
             array_agg(DISTINCT category) AS categories,
 
             SUM(AdmissionVacancies) AS AdmissionVacancies,
-
-            SUM(AcceptanceNumber) AS AcceptanceNumber,
-            SUM(TotalAcceptanceNumber) AS TotalAcceptanceNumber,
-
             SUM(AdmissionNumber) AS AdmissionNumber,
             SUM(TotalAdmissionNumber) AS TotalAdmissionNumber,
+
+            SUM(TotalRegistered) AS TotalRegistered,
+            SUM(AcceptanceNumber) AS AcceptanceNumber,
+            SUM(WaitListNumber) AS WaitListNumber,
+            SUM(TotalAcceptanceNumber) AS TotalAcceptanceNumber,
+            SUM(TotalWaitListNumber) AS TotalWaitListNumber,
+
+            SUM(Tutc_TotalAdmissionNumber) AS Tutc_TotalAdmissionNumber,
+            SUM(Tutc_TotalAcceptanceNumber) AS Tutc_TotalAcceptanceNumber,
 
             CASE
               WHEN SUM(TotalAcceptanceNumber) = 0 THEN
@@ -379,26 +376,29 @@ async function createInitView(year, query_TableName) {
         )
         END
       ) AS AdmissionNumber,
+
+      COALESCE(
+        "Distr_${year}".招生名額,
+        0
+      ) AS Tutc_TotalAdmissionNumber,
+      COALESCE(
+        "Distr_${year}".錄取人數,
+        0
+      ) AS Tutc_TotalAcceptanceNumber,
+
       cast ("一般生招生名額" AS DOUBLE PRECISION) AS TotalAdmissionNumber,
-      cast ("一般生正取錄取人數" AS DOUBLE PRECISION) AS AcceptanceNumber,
+
       cast ("正取總人數" AS DOUBLE PRECISION) AS TotalAcceptanceNumber,
+      cast ("備取總人數" AS DOUBLE PRECISION) AS TotalWaitListNumber,
+
+      cast ("一般生正取錄取人數" AS DOUBLE PRECISION) AS AcceptanceNumber,
+      cast ("一般生備取錄取人數" AS DOUBLE PRECISION) AS WaitListNumber,
+      cast ("報到人數" AS DOUBLE PRECISION) AS TotalRegistered,
       GREATEST(
         cast ("一般生名額空缺" AS DOUBLE PRECISION),0
       ) AS AdmissionVacancies,
 
       r_score AS r_score,
-      (
-        CASE
-          WHEN "一般生招生名額" = 0 THEN
-            0
-          ELSE
-          GREATEST(
-            cast ("一般生名額空缺" AS DOUBLE PRECISION),
-            0
-          ) /
-          cast ("一般生招生名額" AS DOUBLE PRECISION)
-        END
-      ) AS ShiftRatio,
 
       COALESCE(
         "Distr_${year}".錄取總分數 /
@@ -427,35 +427,35 @@ async function createInitView(year, query_TableName) {
       )
     
     LEFT JOIN
-    (
-      SELECT
-        INNER_SC.schoolname,
-        INNER_SC.deptname,
-        INNER_SC."min_avg" AS "alter_avg",
-        INNER_SC2."min_avg" AS "min_avg"
-      FROM (
       (
         SELECT
-          "學校名稱" AS schoolname,
-          "系科組學程名稱" AS deptname,
+          INNER_SC.schoolname,
+          INNER_SC.deptname,
+          INNER_SC."min_avg" AS "alter_avg",
+          INNER_SC2."min_avg" AS "min_avg"
+        FROM (
+        (
+          SELECT
+            "學校名稱" AS schoolname,
+            "系科組學程名稱" AS deptname,
 
-          COALESCE(
-            "錄取總分數" /
-            (
-              "國文" +
-              "英文" +
-              "數學" +
-              "專業一" +
-              "專業二"
-            ),
-            999
-          ) AS "min_avg"
-        FROM public."Distr_${year}"
-        LEFT JOIN
-          public."Group_Classes"
-        ON
-          "群別代號" = ANY(group_classes)
-      ) INNER_SC
+            COALESCE(
+              "錄取總分數" /
+              (
+                "國文" +
+                "英文" +
+                "數學" +
+                "專業一" +
+                "專業二"
+              ),
+              999
+            ) AS "min_avg"
+          FROM public."Distr_${year}"
+          LEFT JOIN
+            public."Group_Classes"
+          ON
+            "群別代號" = ANY(group_classes)
+        ) INNER_SC
 
       JOIN
         public."min_AVG_Query_${year}" INNER_SC2

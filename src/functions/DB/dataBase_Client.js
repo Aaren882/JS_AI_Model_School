@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { QueryChat } from "../ollamaQuery.js";
 import {
 	QueryAdmissionViews,
 	QueryInitViews,
@@ -21,7 +22,8 @@ import {
 //- Make sure DB is connected
 console.log("Connecting Database...");
 
-const postfix = process.env.QUERY_POSTFIX || "";
+export const postfix = process.env.QUERY_POSTFIX || "";
+
 let dbClient = null;
 if (!dbClient) {
 	/* dbClient = new Client({
@@ -345,6 +347,127 @@ export class dataBase_methods {
 			console.error(err);
 		}
 	}
+	static async getSchoolAnalyze(bodyData) {
+		const { year = "", mode, departmentCodes, universityCode, departmentName } = bodyData;
+		const year_Int = parseInt(year);
+
+		const { nodes } = await this.getRelationData(bodyData);
+		const stringify = nodes.map((x) => x[0]).join("','");
+
+		let query, query_target;
+		try {
+			switch (mode) {
+				case "school":
+					query_target = { from: `${universityCode}`, property: "校系代碼", joinGroup: "校系代碼" };
+					query = {
+						text: `
+							SELECT
+								schoolcode AS "校系代碼",
+								schoolname AS "學校名稱",
+
+								Tutc_TotalAdmissionNumber AS "統測登記分發招生名額",
+								Tutc_TotalAcceptanceNumber AS "統測登記分發錄取人數",
+								AVG AS "統測登記分發錄取平均分數",
+
+								TotalAcceptanceNumber AS "甄選一般生正取總人數",
+								TotalWaitListNumber AS "甄選一般生備取總人數",
+								AcceptanceNumber AS "甄選一般生正取錄取人數",
+								WaitListNumber AS "甄選一般生備取錄取人數",
+								AdmissionVacancies AS "甄選一般生名額空缺",
+								AdmissionNumber AS "甄選一般生招生名額",
+								TotalRegistered AS "甄選一般生報到人數",
+
+								ShiftRatio AS "甄選名額流去登分比例",
+								AdmissionRate AS "甄選一般生錄取率",
+								"r_score" AS "年度 R-Score"
+							FROM public."QUERY_${year_Int}_school${postfix}"
+							WHERE schoolcode IN (\'${stringify}\')
+							ORDER BY "r_score" DESC
+						`,
+					};
+					break;
+
+				case "department":
+					query_target = { from: `${universityCode}-${departmentName}`, property: "ID", joinGroup: "ID" };
+					query = {
+						text: `
+							SELECT
+								FORMAT('%s-%s', schoolcode, deptname) AS "ID",
+								schoolcode AS "學校代碼",
+								schoolname AS "學校名稱",
+								deptname AS "系科組學程名稱",
+
+								Tutc_TotalAdmissionNumber AS "統測登記分發招生名額",
+								Tutc_TotalAcceptanceNumber AS "統測登記分發錄取人數",
+								AVG AS "統測登記分發錄取平均分數",
+
+								TotalAcceptanceNumber AS "甄選一般生正取總人數",
+								TotalWaitListNumber AS "甄選一般生備取總人數",
+								AcceptanceNumber AS "甄選一般生正取錄取人數",
+								WaitListNumber AS "甄選一般生備取錄取人數",
+								AdmissionVacancies AS "甄選一般生名額空缺",
+								AdmissionNumber AS "甄選一般生招生名額",
+								TotalRegistered AS "甄選一般生報到人數",
+
+								ShiftRatio AS "甄選名額流去登分比例",
+								AdmissionRate AS "甄選一般生錄取率",
+								"r_score" AS "年度 R-Score"
+
+							FROM Public."QUERY_${year_Int}_department${postfix}"
+							WHERE FORMAT('%s-%s', schoolcode, deptname) IN (\'${stringify}\')
+							ORDER BY "r_score" DESC
+						`,
+					};
+					break;
+
+				default:
+					query_target = { from: departmentCodes[0], property: "校系代碼", joinGroup: "校系代碼" };
+					query = {
+						text: `
+							SELECT 
+								deptcode AS "校系代碼",
+								schoolname AS "學校名稱",
+								deptname AS "系科組學程名稱",
+			
+								Tutc_TotalAdmissionNumber AS "統測登記分發招生名額",
+								Tutc_TotalAcceptanceNumber AS "統測登記分發錄取人數",
+								AVG AS "統測登記分發錄取平均分數",
+								
+								TotalAcceptanceNumber AS "甄選一般生正取總人數",
+								TotalWaitListNumber AS "甄選一般生備取總人數",
+								AcceptanceNumber AS "甄選一般生正取錄取人數",
+								WaitListNumber AS "甄選一般生備取錄取人數",
+								AdmissionVacancies AS "甄選一般生名額空缺",
+								AdmissionNumber AS "甄選一般生招生名額",
+								TotalRegistered AS "甄選一般生報到人數",
+			
+								ShiftRatio AS "甄選名額流去登分比例",
+								AdmissionRate AS "甄選一般生錄取率",
+								"r_score" AS "年度 R-Score"
+									
+							FROM Public."QUERY_${year_Int}${postfix}"
+							WHERE deptcode IN (\'${stringify}\')
+							ORDER BY "r_score" DESC
+						`,
+					};
+					break;
+			}
+
+			const { from, property, joinGroup } = query_target;
+			const { rows } = await dbClient.query(query);
+
+			const target = rows.find((x) => from === x[property]);
+			
+			const data = rows.map((x) =>
+				({ [x[joinGroup]]: x })
+			)[0];
+
+			const { message } = await QueryChat(year_Int, data, target, "");
+			return message.content;
+		} catch (err) {
+			console.error(err);
+		}
+	}
 
 	static async getDepartCodeInTargetYear(bodyData) {
 		const {
@@ -428,28 +551,24 @@ export class dataBase_methods {
 
 		try {
 			let tg_query_Summary, res_Sum;
-			const res_nodes = await dataBase_methods.getRelationData(bodyData);
+			const res_nodes = await this.getRelationData(bodyData);
 
 			switch (mode) {
 				case "school":
 					//- Summarize Schools into average values
 					tg_query_Summary = `
 						SELECT 
-							schoolcode,
-							schoolname,
-							min("posvalid") AS "posvalid",
-							min("admissionvalidity") AS "admissionvalidity",
-							min("admissionrate") AS "admissionrate",
-							min("r_score") AS "r_score",
-							min("shiftratio") AS "shiftratio",
-							min("avg") AS "AVG"
-						FROM public."QUERY_${year_Int}${postfix}"
+							"schoolcode",
+							"schoolname",
+							"posvalid" AS "posvalid",
+							"admissionrate" AS "admissionrate",
+							"r_score" AS "r_score",
+							"shiftratio" AS "shiftratio",
+							"avg" AS "AVG"
+						FROM public."QUERY_${year_Int}_school${postfix}"
 						WHERE "schoolcode" in (
-							\'${res_nodes["nodes"].map((x) => x[0].slice(0, 3)).join("','")}\'
+							\'${res_nodes["nodes"].map(([node]) => node).join("','")}\'
 						)
-						GROUP BY
-							schoolcode,
-							schoolname
 					`;
 					break;
 				case "department":
@@ -481,7 +600,6 @@ export class dataBase_methods {
 							schoolcode,
 							schoolname,
 							"posvalid",
-							"admissionvalidity",
 							"admissionrate",
 							"r_score",
 							"shiftratio",
