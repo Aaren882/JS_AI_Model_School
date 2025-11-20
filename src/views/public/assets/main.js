@@ -562,7 +562,7 @@ function updateSelectedSchool(schoolElement) {
 			.then((json) => {
 				//console.log(json);
 				const { nodes, edges } = json;
-				drawLineChart("chart-line-1", nodes, "錄取率", "admissionrate");
+				drawLineChart("chart-line-1", nodes, "報到率", "admissionrate");
 				drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
 				drawLineChart(
 					"chart-line-3",
@@ -684,7 +684,7 @@ function updateSelectedDepartment(departmentElement) {
 
 				if(currentDisplayMode==="department"){nodes.map((x)=>{x[0]=x[0].split('-')})}
 
-				drawLineChart("chart-line-1", nodes, "錄取率", "admissionrate");
+				drawLineChart("chart-line-1", nodes, "報到率", "admissionrate");
 				drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
 				drawLineChart(
 					"chart-line-3",
@@ -1104,7 +1104,11 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 	});
 	const rValues = nodes.map((d) => d[1]);
 	const avgValues = nodes.map((d) => {
-		return parseFloat(localizeDept(d[0], [avgKey])).toFixed(2);
+		
+		let result = parseFloat(localizeDept(d[0], [avgKey]));
+		if (result === 999) return "";
+
+		return result.toFixed(2);
 	});
 	const ranks =[
 		CalcRanks(rValues),
@@ -1151,7 +1155,10 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 					},
 					align: (ctx)=> ctx.datasetIndex === 0 ? "top" : "bottom",
 					anchor: "end",
-					formatter: function (value, ctx) {return `(${ranks[ctx.datasetIndex][ctx.dataIndex]}）\n${value}`;},
+					formatter: function (value, ctx) {
+						value = value === "" ? "查無資料" : value;
+						return `(${ranks[ctx.datasetIndex][ctx.dataIndex]}）\n${value}`;
+					},
 					font: (ctx) => { 
 						const rank = ranks[ctx.datasetIndex][ctx.dataIndex];
 						return { size: rank <= 3 ? 12 : 10, weight: rank <= 3 ? 'bold' : 'normal' };

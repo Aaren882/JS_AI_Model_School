@@ -104,7 +104,7 @@ API_router.get("/getSchoolAnalyze", async (req, res) => {
 									cast ("一般生招生名額" AS DOUBLE PRECISION)
 								)
 							END
-						) AS 甄選一般生錄取率,
+						) AS 甄選一般生報到率,
 						"Data_${int_Year}"."r_score" AS "年度 R-Score"
 						
 				FROM Public."Distr_${int_Year}"

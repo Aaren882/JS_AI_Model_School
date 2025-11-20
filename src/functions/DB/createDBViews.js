@@ -270,77 +270,206 @@ async function createDataView_Department(year, query_TableName) {
 
 //- Prefix "QUERY_Init_" => 輕量整理後的初始資料
 async function createInitView(year, query_TableName) {
+  //- Updates the min_AVG_Query
+  const Create_min_AVG_Query = {
+    name: `Create_min_AVG_Query-${year}_VIEW_Table`,
+    text: `
+      DO $$
+        BEGIN
+        IF EXISTS (
+          SELECT 1 
+          FROM information_schema.tables
+          WHERE 
+            table_schema = 'public' AND
+            table_name = 'min_AVG_Query_${year}'
+        ) THEN
+          RAISE NOTICE 'Table "min_AVG_Query_${year}" does exist. Cannot create table.';
+        ELSE
+          CREATE TABLE IF NOT EXISTS public."min_AVG_Query_${year}" (
+            schoolname character varying,
+            deptname character varying,
+            categories text[],
+            min_avg real
+          );
 
+          INSERT INTO public."min_AVG_Query_${year}"
+            (schoolname, deptname, categories, min_avg)
+            SELECT
+              "學校名稱" AS schoolname,
+              "系科組學程名稱" AS deptname,
+              ARRAY_Agg("群別代號") AS categories,
+              MIN(
+                COALESCE(
+                  "錄取總分數" /
+                  (
+                    "國文" +
+                    "英文" +
+                    "數學" +
+                    "專業一" +
+                    "專業二"
+                  ),
+                  999
+                )
+              ) AS "min_avg"
+            FROM public."Distr_${year}"
+            WHERE
+              "系科組學程名稱" IS NOT NULL
+            GROUP BY
+              "學校名稱",
+              "系科組學程名稱";
+        END IF;
+
+        IF EXISTS (
+          SELECT 1
+          FROM information_schema.tables
+          WHERE
+            table_schema = 'public' AND
+            table_name = 'Group_Classes'
+        ) THEN
+          RAISE NOTICE 'Table "Group_Classes" does exist. Cannot create table.';
+        ELSE
+          CREATE TABLE public."Group_Classes" (
+            group_classes text[]
+          );
+
+          INSERT INTO public."Group_Classes"
+            (group_classes) VALUES
+            (ARRAY['21','09']);
+        END IF;
+      END $$;
+    `,
+  };
+
+  //- insert "min_AVG_Query"
+  await dbClient.query(Create_min_AVG_Query);
+
+  //- #NOTE : 這個過濾方法能解決 99%，可能還是會miss掉一些
   const query = {
     text: `
-      SELECT
-        (
-          SUBSTRING(
-            cast ("校系代碼" as varChar),1,3
-          )
-        ) AS schoolCode,
-        "Data_${year}".學校名稱 AS schoolName,
-        (
-          cast ("校系代碼" AS varChar)
-        ) AS deptCode,
-        "Data_${year}".系科組學程名稱 AS deptName,
-        "Data_${year}".群別代號 AS category,
-        "正取有效性" AS posValid,
-        "正備取有效性" AS admissionValidity,
+    SELECT DISTINCT
+      (
+        LEFT(
+          cast ("校系代碼" as varChar),3
+        )
+      ) AS schoolCode,
+      SC.學校名稱 AS schoolName,
+      (
+        cast ("校系代碼" AS varChar)
+      ) AS deptCode,
+      SC.系科組學程名稱 AS deptName,
+      SC.群別代號 AS category,
 
+      "正取有效性" AS posValid,
+      "正備取有效性" AS admissionValidity,
+
+      (
+        CASE
+        WHEN "一般生招生名額" = 0 THEN
+          0
+        ELSE
         (
-          CASE
-          WHEN "一般生招生名額" = 0 THEN 
-            0
-          ELSE
-            (
-              cast ("一般生招生名額" AS DOUBLE PRECISION) -
-              LEAST(
-                cast ("一般生招生名額" AS DOUBLE PRECISION),
-                GREATEST(
-                  cast ("一般生名額空缺" AS DOUBLE PRECISION),
-                  0
-                )
-              )
-            )
-          END
-        ) AS AdmissionNumber,
-        cast ("一般生招生名額" AS DOUBLE PRECISION) AS TotalAdmissionNumber,
-        cast ("一般生正取錄取人數" AS DOUBLE PRECISION) AS AcceptanceNumber,
-        cast ("正取總人數" AS DOUBLE PRECISION) AS TotalAcceptanceNumber,
-        GREATEST(
-          cast ("一般生名額空缺" AS DOUBLE PRECISION),0
-        ) AS AdmissionVacancies,
-         
-        r_score AS r_score,
-        (
-          CASE
-          WHEN "一般生招生名額" = 0 THEN 
-            0
-          ELSE
+          cast ("一般生招生名額" AS DOUBLE PRECISION) -
+            LEAST(
+              cast ("一般生招生名額" AS DOUBLE PRECISION),
             GREATEST(
               cast ("一般生名額空缺" AS DOUBLE PRECISION),
               0
-            ) / 
-            cast ("一般生招生名額" AS DOUBLE PRECISION)
-          END
-        ) AS ShiftRatio,
-        COALESCE(
-          "Distr_${year}".錄取總分數 /
-          (
-            "Distr_${year}".國文 +
-            "Distr_${year}".英文 +
-            "Distr_${year}".數學 +
-            "Distr_${year}".專業一 +
-            "Distr_${year}".專業二
+            )
           )
-        , 0) AS "avg"
-      FROM Public."Distr_${year}"
-      RIGHT JOIN Public."Data_${year}" ON 
-        "Data_${year}".群別代號 LIKE "Distr_${year}".群別代號 AND
-        "Data_${year}".學校名稱 LIKE "Distr_${year}".學校名稱 AND
-        POSITION("Data_${year}".系科組學程名稱 IN "Distr_${year}".系科組學程名稱) > 0 AND
-        "Distr_${year}".群別代號 LIKE "Distr_${year}".群別代號
+        )
+        END
+      ) AS AdmissionNumber,
+      cast ("一般生招生名額" AS DOUBLE PRECISION) AS TotalAdmissionNumber,
+      cast ("一般生正取錄取人數" AS DOUBLE PRECISION) AS AcceptanceNumber,
+      cast ("正取總人數" AS DOUBLE PRECISION) AS TotalAcceptanceNumber,
+      GREATEST(
+        cast ("一般生名額空缺" AS DOUBLE PRECISION),0
+      ) AS AdmissionVacancies,
+
+      r_score AS r_score,
+      (
+        CASE
+          WHEN "一般生招生名額" = 0 THEN
+            0
+          ELSE
+          GREATEST(
+            cast ("一般生名額空缺" AS DOUBLE PRECISION),
+            0
+          ) /
+          cast ("一般生招生名額" AS DOUBLE PRECISION)
+        END
+      ) AS ShiftRatio,
+
+      COALESCE(
+        "Distr_${year}".錄取總分數 /
+        (
+          "Distr_${year}".國文 +
+          "Distr_${year}".英文 +
+          "Distr_${year}".數學 +
+          "Distr_${year}".專業一 +
+          "Distr_${year}".專業二
+        ),
+        alter_avg,
+        min_avg,
+        999
+      ) AS "avg"
+    FROM Public."Distr_${year}"
+
+    RIGHT JOIN
+      Public."Data_${year}" SC
+    ON
+      SC.群別代號 = "Distr_${year}".群別代號 AND
+      SC.學校名稱 = "Distr_${year}".學校名稱 AND
+      "Distr_${year}".群別代號 = "Distr_${year}".群別代號 AND
+      (
+        POSITION(SC.系科組學程名稱 IN "Distr_${year}".系科組學程名稱) > 0 OR
+        POSITION("Distr_${year}".系科組學程名稱 IN SC.系科組學程名稱) > 0
+      )
+    
+    LEFT JOIN
+    (
+      SELECT
+        INNER_SC.schoolname,
+        INNER_SC.deptname,
+        INNER_SC."min_avg" AS "alter_avg",
+        INNER_SC2."min_avg" AS "min_avg"
+      FROM (
+      (
+        SELECT
+          "學校名稱" AS schoolname,
+          "系科組學程名稱" AS deptname,
+
+          COALESCE(
+            "錄取總分數" /
+            (
+              "國文" +
+              "英文" +
+              "數學" +
+              "專業一" +
+              "專業二"
+            ),
+            999
+          ) AS "min_avg"
+        FROM public."Distr_${year}"
+        LEFT JOIN
+          public."Group_Classes"
+        ON
+          "群別代號" = ANY(group_classes)
+      ) INNER_SC
+
+      JOIN
+        public."min_AVG_Query_${year}" INNER_SC2
+      ON
+        INNER_SC.schoolname = INNER_SC2.schoolname AND
+        INNER_SC.deptname = INNER_SC2.deptname
+      )
+    ) SC2
+    ON
+      SC."學校名稱" = SC2.schoolname AND
+      (
+        POSITION(SC.系科組學程名稱 IN SC2.deptname) > 0 OR
+        POSITION(SC2.deptname IN SC.系科組學程名稱) > 0
+      )
     `,
   };
   const create = {

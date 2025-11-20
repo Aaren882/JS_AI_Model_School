@@ -161,8 +161,24 @@ export class dataBase_methods {
   */
 	static async getAllGroup(year_Int = -1) {
 		const query = `
-      SELECT *
-      FROM public."QUERY_${year_Int}${postfix}"
+      SELECT 
+				schoolcode,
+				schoolname,
+				deptcode,
+				deptname,
+				category,
+				admissionvacancies,
+				acceptancenumber,
+				totalacceptancenumber,
+				admissionnumber,
+				totaladmissionnumber,
+				posvalid,
+				admissionrate,
+				shiftratio,
+				admissionvalidity,
+				r_score,
+				"avg"
+			FROM public."QUERY_${year_Int}${postfix}"
     `;
 
 		try {
@@ -561,6 +577,8 @@ export class dataBase_methods {
 				GROUP BY
 					winner,
 					loser
+				ORDER BY
+					COUNT(isdraw) DESC
 			`,
 			rowMode: "array",
 		};
