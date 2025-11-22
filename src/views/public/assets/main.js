@@ -552,17 +552,68 @@ function GetRelationData(payload) {
 		.then((json) => {
 			// console.log(json);
 			const { nodes, edges } = json;
-			drawLineChart("chart-line-1", nodes, "報到率", "admissionrate");
-			drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
-			drawLineChart(
+			const [labels, admissionRates, admissionRateCounts] = drawLineChart("chart-line-1", nodes, "報到率", "admissionrate");
+			const [, ranks, rValues, avgValues] = drawDualAxisLineChart("chart-line-2", nodes, "r_score", "avg");
+			const [, shiftRatios, shiftRatioCounts] = drawLineChart(
 				"chart-line-3",
 				nodes,
 				"甄選名額流去登分比例",
 				"shiftratio"
 			);
-			drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
+			const [, posValids, posValidCounts] = drawLineChart("chart-line-4", nodes, "正取有效性", "posvalid");
 			renderNetwork(nodes, edges);
 			iLB();
+
+			//- Log table
+			const table = [];
+			for (let index = 0; index < labels.length; index++) {
+				let label = labels[index].join('-');
+				let rValue = rValues[index];
+				let avgValue = avgValues[index];
+
+				let rValueRank = ranks[0][index];
+				let avgValueRank = ranks[1][index];
+
+				let fixedDigits = 2;
+				let admissionRate = admissionRates[index].toFixed(fixedDigits);
+				let shiftRatio = shiftRatios[index].toFixed(fixedDigits);
+				let posValid = posValids[index].toFixed(fixedDigits);
+
+				let admissionRateCount = admissionRateCounts[index];
+				let shiftRatioCount = shiftRatioCounts[index];
+				let posValidCount = posValidCounts[index];
+
+				table.push(
+					{
+						'R值排名': rValueRank,
+						'平均分數排名': avgValueRank,
+						'名稱': label,
+						'R值': rValue,
+						'平均分數': avgValue,
+						'錄取率': admissionRate,
+						'一般生錄取名額': admissionRateCount,
+						'甄選名額流去登分比例': shiftRatio,
+						'一般生名額空缺': shiftRatioCount,
+						'正取有效性': posValid,
+						'一般生錄取錄取人數': posValidCount,
+					}
+				);
+			}
+
+			console.table(table, [
+				'R值排名',
+				'平均分數排名',
+				'名稱',
+				'R值',
+				'平均分數',
+				'錄取率',
+				'一般生錄取名額',
+				'甄選名額流去登分比例',
+				'一般生名額空缺',
+				'正取有效性',
+				'一般生錄取錄取人數'
+			]);
+			
 			return json;
 		})
 		.catch((err) => {
@@ -1068,6 +1119,8 @@ function drawLineChart(containerId, nodes, chartName = "", dataKey = "") {
 			},
 		},
 	});
+
+	return [labels, values, CountData];
 }
 function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 	const labels = nodes.map((d) => { //- Formatting labels
@@ -1200,6 +1253,8 @@ function drawDualAxisLineChart(containerId, nodes, rKey = "", avgKey = "") {
 			},
 		},
 	});
+
+	return [labels, ranks, rValues, avgValues];
 }
 
 function CalcRanks(values) {
